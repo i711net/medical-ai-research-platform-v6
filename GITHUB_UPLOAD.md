@@ -41,7 +41,8 @@ medical-ai-research-platform-v6/
 │   ├── seed.sql
 │   ├── public_demo_policies.sql
 │   ├── auth_migration.sql
-│   └── auth_role_policies.sql
+│   ├── auth_role_policies.sql
+│   └── admin_security.sql
 └── api-examples/
     └── huggingface-tongue.js
 ```
@@ -85,6 +86,8 @@ GitHub 页面里应该能直接看到：
 - Supabase Auth 登录和角色权限 SQL
 - 候诊队列状态流转
 - 医生/学生/管理员按钮权限控制
+- 管理员注册码分配
+- 删除记录二次密码校验
 
 ## 接 Supabase 时要上传
 
@@ -116,3 +119,11 @@ sql/auth_role_policies.sql
 ```
 
 它会补上挂号状态更新权限。
+
+如果要启用管理员分配人员和安全删除，执行：
+
+```text
+sql/admin_security.sql
+```
+
+然后在 SQL Editor 里运行 `admin_security.sql` 文件底部注释里的初始化语句，并把 `CHANGE_THIS_DELETE_PASSWORD` 改成自己的删除专用密码。

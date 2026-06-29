@@ -593,6 +593,10 @@ meter {
   color: #0f766e;
 }
 
+.queue-actions .danger-action {
+  color: var(--red);
+}
+
 button:disabled,
 input:disabled,
 select:disabled,
@@ -629,6 +633,23 @@ textarea:disabled {
   color: var(--muted);
   font-size: 12px;
   line-height: 1.55;
+}
+
+.invite-admin {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.invite-admin h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.delete-password {
+  margin-bottom: 12px;
 }
 
 #databasePreview {

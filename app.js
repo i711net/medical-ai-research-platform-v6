@@ -63,7 +63,8 @@ const copy = {
     accountSub: "Supabase Auth 登录，并绑定医生、学生、管理员角色。",
     email: "邮箱",
     password: "密码",
-    signupRole: "注册角色",
+    displayName: "人员姓名",
+    inviteCode: "注册码",
     login: "登录",
     signup: "注册",
     logout: "退出",
@@ -75,7 +76,14 @@ const copy = {
     databaseTitle: "数据库保存与管理",
     databaseSub: "优先保存到 Supabase；未配置时自动使用浏览器 localStorage。",
     exportJson: "导出 JSON",
-    resetDemo: "重置演示数据"
+    resetDemo: "重置演示数据",
+    inviteTitle: "人员注册码",
+    inviteName: "人员姓名",
+    inviteEmail: "绑定邮箱",
+    inviteRole: "人员角色",
+    inviteCodeOut: "生成注册码",
+    createInvite: "生成并保存注册码",
+    deletePassword: "删除专用密码"
   },
   en: {
     tagline: "TCM + Western medicine + GraphRAG + tongue vision + bilingual paper demo",
@@ -124,7 +132,8 @@ const copy = {
     accountSub: "Supabase Auth login with doctor, student, and administrator roles.",
     email: "Email",
     password: "Password",
-    signupRole: "Signup role",
+    displayName: "Display name",
+    inviteCode: "Invite code",
     login: "Log in",
     signup: "Sign up",
     logout: "Log out",
@@ -136,7 +145,14 @@ const copy = {
     databaseTitle: "Database Storage and Management",
     databaseSub: "Saves to Supabase when configured; falls back to browser localStorage.",
     exportJson: "Export JSON",
-    resetDemo: "Reset demo data"
+    resetDemo: "Reset demo data",
+    inviteTitle: "Staff invite codes",
+    inviteName: "Staff name",
+    inviteEmail: "Bound email",
+    inviteRole: "Staff role",
+    inviteCodeOut: "Generated code",
+    createInvite: "Create and save code",
+    deletePassword: "Deletion password"
   }
 };
 
@@ -212,7 +228,7 @@ function applyPermissions() {
     });
   });
 
-  ["#resetButton"].forEach((selector) => {
+  ["#resetButton", "#createInviteButton", "#inviteName", "#inviteEmail", "#inviteRole"].forEach((selector) => {
     document.querySelectorAll(selector).forEach((el) => {
       el.disabled = !canAdmin;
       el.title = canAdmin ? "" : (state.lang === "zh" ? "仅管理员可操作" : "Admin only");
@@ -373,24 +389,19 @@ async function loadUserProfile() {
   if (data?.role) state.role = data.role;
 }
 
-async function createUserProfile(role) {
+async function redeemInviteCode(inviteCode, displayName) {
   if (!state.supabase || !state.authUser) return;
   const email = state.authUser.email || document.querySelector("#authEmail")?.value.trim();
-  const displayName = email?.split("@")[0] || "Medical AI User";
-  const { data, error } = await state.supabase
-    .from("clinic_users")
-    .insert({
-      auth_user_id: state.authUser.id,
-      email,
-      display_name: displayName,
-      role
-    })
-    .select("id, email, display_name, role")
-    .single();
+  const { data, error } = await state.supabase.rpc("redeem_invite_code", {
+    p_code: inviteCode,
+    p_auth_user_id: state.authUser.id,
+    p_email: email,
+    p_display_name: displayName || email?.split("@")[0] || "Medical AI User"
+  });
 
   if (error) throw error;
-  state.profile = data;
-  state.role = data.role;
+  state.profile = Array.isArray(data) ? data[0] : data;
+  if (state.profile?.role) state.role = state.profile.role;
 }
 
 async function signUp() {
@@ -401,7 +412,12 @@ async function signUp() {
 
   const email = document.querySelector("#authEmail").value.trim();
   const password = document.querySelector("#authPassword").value;
-  const role = document.querySelector("#signupRole").value;
+  const displayName = document.querySelector("#displayName").value.trim();
+  const inviteCode = document.querySelector("#inviteCode").value.trim();
+  if (!inviteCode) {
+    alert(state.lang === "zh" ? "注册必须填写管理员分配的注册码。" : "Registration requires an admin-issued invite code.");
+    return;
+  }
   const { data, error } = await state.supabase.auth.signUp({ email, password });
   if (error) {
     alert(error.message);
@@ -411,8 +427,8 @@ async function signUp() {
   state.authUser = data.user || null;
   if (data.session && state.authUser) {
     try {
-      await createUserProfile(role);
-      addAudit(`注册账号：${email} (${role})`);
+      await redeemInviteCode(inviteCode, displayName);
+      addAudit(`注册码注册账号：${email} (${state.profile?.role || "unknown"})`);
     } catch (profileError) {
       alert(`Profile error: ${profileError.message}`);
     }
@@ -440,11 +456,7 @@ async function signIn() {
   state.authUser = data.user;
   await loadUserProfile();
   if (!state.profile) {
-    try {
-      await createUserProfile(document.querySelector("#signupRole").value);
-    } catch (profileError) {
-      alert(`Profile error: ${profileError.message}`);
-    }
+    alert(state.lang === "zh" ? "此账号没有角色资料，请联系管理员分配注册码。" : "This account has no role profile. Ask an administrator for an invite code.");
   }
   addAudit(`账号登录：${email}`);
   renderRole();
@@ -586,6 +598,71 @@ async function syncVisitStatusToSupabase(visit) {
   await syncAuditToSupabase(`更新就诊状态：${visit.id} ${visit.status}`, { visit_no: visit.id, status: visit.status });
 }
 
+function generateInviteCode() {
+  const part = Math.random().toString(36).slice(2, 8).toUpperCase();
+  return `TCM-${part}`;
+}
+
+async function createInviteCode() {
+  if (!hasRole("admin")) {
+    alert(state.lang === "zh" ? "仅管理员可以生成注册码。" : "Only administrators can create invite codes.");
+    return;
+  }
+  const code = generateInviteCode();
+  const invite = {
+    code,
+    display_name: document.querySelector("#inviteName").value.trim() || "New staff",
+    email: document.querySelector("#inviteEmail").value.trim() || null,
+    role: document.querySelector("#inviteRole").value
+  };
+
+  if (state.supabase) {
+    const { error } = await state.supabase.from("invitation_codes").insert(invite);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+  }
+
+  document.querySelector("#generatedInviteCode").value = code;
+  addAudit(`生成注册码：${invite.display_name} ${invite.role}`);
+  saveDatabase();
+  renderDatabase();
+}
+
+async function deleteVisit(id) {
+  if (!hasRole("admin")) {
+    alert(state.lang === "zh" ? "仅管理员可以删除记录。" : "Only administrators can delete records.");
+    return;
+  }
+
+  const password = document.querySelector("#deletePassword").value;
+  if (!password) {
+    alert(state.lang === "zh" ? "请输入删除专用密码。" : "Enter the deletion password.");
+    return;
+  }
+
+  const visit = state.db.visits.find((item) => item.id === id);
+  if (!visit) return;
+  if (!confirm(state.lang === "zh" ? `确认删除 ${visit.id}？删除前请先导出备份。` : `Delete ${visit.id}? Export a backup first.`)) return;
+
+  if (state.supabase && visit.supabaseId) {
+    const { error } = await state.supabase.rpc("delete_outpatient_visit_with_password", {
+      p_visit_id: visit.supabaseId,
+      p_delete_password: password
+    });
+    if (error) {
+      alert(error.message);
+      return;
+    }
+  }
+
+  state.db.visits = state.db.visits.filter((item) => item.id !== id);
+  addAudit(`删除挂号记录：${visit.id}`);
+  saveDatabase();
+  renderDatabase();
+}
+
 async function syncAuditToSupabase(action, payload = {}) {
   if (!state.supabase) return;
   const result = await state.supabase
@@ -677,6 +754,7 @@ function renderDatabase() {
           <button type="button" data-visit-status="${visit.id}|waiting">候诊</button>
           <button type="button" data-visit-status="${visit.id}|in_consult">接诊</button>
           <button type="button" data-visit-status="${visit.id}|done">完成</button>
+          <button class="danger-action" type="button" data-delete-visit="${visit.id}">删除</button>
         </div>
       </article>
     `);
@@ -686,6 +764,12 @@ function renderDatabase() {
       button.addEventListener("click", async () => {
         const [id, status] = button.dataset.visitStatus.split("|");
         await updateVisitStatus(id, status);
+      });
+    });
+    list.querySelectorAll("[data-delete-visit]").forEach((button) => {
+      button.disabled = !hasRole("admin");
+      button.addEventListener("click", async () => {
+        await deleteVisit(button.dataset.deleteVisit);
       });
     });
   }
@@ -852,6 +936,7 @@ document.querySelector("#saveRecordButton")?.addEventListener("click", saveCurre
 document.querySelector("#signupButton")?.addEventListener("click", signUp);
 document.querySelector("#loginButton")?.addEventListener("click", signIn);
 document.querySelector("#logoutButton")?.addEventListener("click", signOut);
+document.querySelector("#createInviteButton")?.addEventListener("click", createInviteCode);
 document.querySelector("#clearSelectionButton")?.addEventListener("click", () => {
   state.selectedSymptoms.clear();
   renderSymptoms();
@@ -869,6 +954,11 @@ document.querySelector("#exportButton")?.addEventListener("click", () => {
 document.querySelector("#resetButton")?.addEventListener("click", resetDemoData);
 document.querySelectorAll("[data-role]").forEach((button) => {
   button.addEventListener("click", () => {
+    if (state.authUser) {
+      alert(state.lang === "zh" ? "登录后角色由管理员注册码决定，不能手动切换。" : "After login, role is assigned by admin invite code and cannot be switched manually.");
+      renderRole();
+      return;
+    }
     state.role = button.dataset.role;
     document.querySelectorAll("[data-role]").forEach((el) => el.classList.toggle("active", el === button));
     renderRole();

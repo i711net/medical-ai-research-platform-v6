@@ -13,11 +13,6 @@ on clinic_users for select
 to authenticated
 using (auth_user_id = auth.uid());
 
-create policy "users can create own profile"
-on clinic_users for insert
-to authenticated
-with check (auth_user_id = auth.uid());
-
 create policy "admins can read all profiles"
 on clinic_users for select
 to authenticated

@@ -245,12 +245,12 @@
                 <input id="authPassword" type="password" placeholder="至少 6 位" autocomplete="current-password" />
               </label>
               <label class="select-field">
-                <span data-i18n="signupRole">注册角色</span>
-                <select id="signupRole">
-                  <option value="doctor">医生 / Doctor</option>
-                  <option value="student">学生 / Student</option>
-                  <option value="admin">管理员 / Admin</option>
-                </select>
+                <span data-i18n="displayName">人员姓名</span>
+                <input id="displayName" type="text" placeholder="李医生 / Dr. Li" autocomplete="name" />
+              </label>
+              <label class="select-field">
+                <span data-i18n="inviteCode">注册码</span>
+                <input id="inviteCode" type="text" placeholder="由管理员分配" autocomplete="off" />
               </label>
               <div class="record-actions">
                 <button class="primary-button" id="loginButton" type="button" data-i18n="login">登录</button>
@@ -283,6 +283,34 @@
               <div><span data-i18n="highRisk">高风险提示</span><strong id="riskCount">0</strong></div>
             </div>
             <div class="audit-log" id="auditLog"></div>
+            <div class="invite-admin">
+              <h3 data-i18n="inviteTitle">人员注册码</h3>
+              <div class="two-col">
+                <label class="select-field">
+                  <span data-i18n="inviteName">人员姓名</span>
+                  <input id="inviteName" type="text" placeholder="王医生" />
+                </label>
+                <label class="select-field">
+                  <span data-i18n="inviteEmail">绑定邮箱</span>
+                  <input id="inviteEmail" type="email" placeholder="可选" />
+                </label>
+              </div>
+              <div class="two-col">
+                <label class="select-field">
+                  <span data-i18n="inviteRole">人员角色</span>
+                  <select id="inviteRole">
+                    <option value="doctor">医生 / Doctor</option>
+                    <option value="student">学生 / Student</option>
+                    <option value="admin">管理员 / Admin</option>
+                  </select>
+                </label>
+                <label class="select-field">
+                  <span data-i18n="inviteCodeOut">生成注册码</span>
+                  <input id="generatedInviteCode" type="text" readonly />
+                </label>
+              </div>
+              <button class="ghost-button" id="createInviteButton" type="button" data-i18n="createInvite">生成并保存注册码</button>
+            </div>
           </section>
 
           <section class="panel ops-panel database-panel">
@@ -296,6 +324,10 @@
               <button class="ghost-button" id="exportButton" type="button" data-i18n="exportJson">导出 JSON</button>
               <button class="ghost-button danger" id="resetButton" type="button" data-i18n="resetDemo">重置演示数据</button>
             </div>
+            <label class="select-field delete-password">
+              <span data-i18n="deletePassword">删除专用密码</span>
+              <input id="deletePassword" type="password" placeholder="仅删除时使用" autocomplete="off" />
+            </label>
             <textarea id="databasePreview" rows="10" readonly></textarea>
           </section>
         </div>

@@ -104,6 +104,27 @@ V6.2 增强：
 - 医生/管理员可以把挂号状态改为候诊、接诊、完成
 - 重新执行 `sql/auth_role_policies.sql` 可获得 Supabase 更新权限
 
+## V6.3 管理员邀请码与安全删除
+
+本项目不建议开放网页自由注册。推荐流程：
+
+1. 管理员先登录系统。
+2. 管理员在后台生成人员注册码。
+3. 新人员使用邮箱、密码、姓名、注册码注册。
+4. 人员角色由注册码决定，不能自己选择医生/学生/管理员。
+5. 管理员删除记录前应先导出 JSON 备份。
+6. 删除记录需要管理员登录 + 删除专用密码。
+
+执行：
+
+```text
+sql/admin_security.sql
+```
+
+然后在 Supabase SQL Editor 里执行文件底部的删除密码初始化语句，把 `CHANGE_THIS_DELETE_PASSWORD` 改成你自己的删除专用密码。
+
+Vercel 负责部署网站；账号、角色、注册码和删除权限由 Supabase 管理。
+
 ## 部署建议
 
 ### Cloudflare Pages
@@ -151,6 +172,7 @@ A Multimodal GraphRAG-Based Bilingual Medical AI System for Traditional Chinese 
 - `sql/public_demo_policies.sql`：公开 Demo 的 Supabase RLS 策略
 - `sql/auth_migration.sql`：给旧数据库增加 Auth 用户关联字段
 - `sql/auth_role_policies.sql`：Supabase Auth 角色权限策略
+- `sql/admin_security.sql`：管理员注册码、安全删除密码和删除函数
 - `supabase-config.js`：Supabase URL 和 anon key 配置
 - `api-examples/huggingface-tongue.js`：HuggingFace 舌诊接口示例
 - `assets/v6-ui-concept.png`：本次生成的 UI 概念图

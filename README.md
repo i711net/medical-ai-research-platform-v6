@@ -97,6 +97,13 @@ Supabase 控制台建议设置：
 - `student`：病例学习、考试训练
 - `admin`：后台统计、审计、数据管理
 
+V6.2 增强：
+
+- 登录后按角色限制按钮权限
+- 学生不能新增挂号、保存病例、更新就诊状态
+- 医生/管理员可以把挂号状态改为候诊、接诊、完成
+- 重新执行 `sql/auth_role_policies.sql` 可获得 Supabase 更新权限
+
 ## 部署建议
 
 ### Cloudflare Pages

@@ -10,8 +10,10 @@ drop policy if exists "public demo read patients" on patients;
 drop policy if exists "public demo insert patients" on patients;
 drop policy if exists "public demo read visits" on outpatient_visits;
 drop policy if exists "public demo insert visits" on outpatient_visits;
+drop policy if exists "public demo update visits" on outpatient_visits;
 drop policy if exists "public demo read records" on medical_records;
 drop policy if exists "public demo insert records" on medical_records;
+drop policy if exists "public demo update records" on medical_records;
 drop policy if exists "public demo read audit logs" on admin_audit_logs;
 drop policy if exists "public demo insert audit logs" on admin_audit_logs;
 drop policy if exists "public demo read knowledge" on medical_knowledge;
@@ -38,6 +40,12 @@ on outpatient_visits for insert
 to anon, authenticated
 with check (true);
 
+create policy "public demo update visits"
+on outpatient_visits for update
+to anon, authenticated
+using (true)
+with check (true);
+
 create policy "public demo read records"
 on medical_records for select
 to anon, authenticated
@@ -46,6 +54,12 @@ using (true);
 create policy "public demo insert records"
 on medical_records for insert
 to anon, authenticated
+with check (true);
+
+create policy "public demo update records"
+on medical_records for update
+to anon, authenticated
+using (true)
 with check (true);
 
 create policy "public demo read audit logs"

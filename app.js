@@ -191,6 +191,35 @@ function t(key) {
   return copy[state.lang][key] || key;
 }
 
+function hasRole(...roles) {
+  if (!state.authUser) return true;
+  return roles.includes(state.role);
+}
+
+function applyPermissions() {
+  const canManageClinic = hasRole("doctor", "admin");
+  const canAdmin = hasRole("admin");
+  [
+    "#registrationForm input",
+    "#registrationForm select",
+    "#registrationForm textarea",
+    "#registrationForm .analyze-button",
+    "#saveRecordButton"
+  ].forEach((selector) => {
+    document.querySelectorAll(selector).forEach((el) => {
+      el.disabled = !canManageClinic;
+      el.title = canManageClinic ? "" : (state.lang === "zh" ? "学生角色不能管理门诊数据" : "Student role cannot manage clinic data");
+    });
+  });
+
+  ["#resetButton"].forEach((selector) => {
+    document.querySelectorAll(selector).forEach((el) => {
+      el.disabled = !canAdmin;
+      el.title = canAdmin ? "" : (state.lang === "zh" ? "仅管理员可操作" : "Admin only");
+    });
+  });
+}
+
 function applyLanguage() {
   document.documentElement.lang = state.lang === "zh" ? "zh-CN" : "en";
   document.querySelectorAll("[data-i18n]").forEach((el) => {
@@ -202,6 +231,7 @@ function applyLanguage() {
   renderSymptoms();
   renderRole();
   renderDatabase();
+  applyPermissions();
 }
 
 function renderSymptoms() {
@@ -545,6 +575,17 @@ async function syncRecordToSupabase(record) {
   state.remoteReady = true;
 }
 
+async function syncVisitStatusToSupabase(visit) {
+  if (!state.supabase || !visit.supabaseId) return;
+  const result = await state.supabase
+    .from("outpatient_visits")
+    .update({ status: visit.status })
+    .eq("id", visit.supabaseId);
+
+  if (result.error) throw result.error;
+  await syncAuditToSupabase(`更新就诊状态：${visit.id} ${visit.status}`, { visit_no: visit.id, status: visit.status });
+}
+
 async function syncAuditToSupabase(action, payload = {}) {
   if (!state.supabase) return;
   const result = await state.supabase
@@ -561,6 +602,10 @@ function addAudit(message) {
 
 async function createVisit(event) {
   event.preventDefault();
+  if (!hasRole("doctor", "admin")) {
+    alert(state.lang === "zh" ? "当前角色不能新增挂号。" : "Current role cannot create visits.");
+    return;
+  }
   const visit = {
     id: `V${new Date().toISOString().slice(0, 10).replaceAll("-", "")}-${String(state.db.visits.length + 1).padStart(3, "0")}`,
     name: document.querySelector("#patientName").value.trim(),
@@ -588,6 +633,10 @@ async function createVisit(event) {
 }
 
 async function saveCurrentRecord() {
+  if (!hasRole("doctor", "admin")) {
+    alert(state.lang === "zh" ? "当前角色不能保存病例。" : "Current role cannot save records.");
+    return;
+  }
   const latestVisit = state.db.visits[0];
   const record = {
     id: `R${new Date().toISOString().slice(0, 10).replaceAll("-", "")}-${String(state.db.records.length + 1).padStart(3, "0")}`,
@@ -624,9 +673,21 @@ function renderDatabase() {
         <strong>${visit.id} · ${visit.name} · ${visit.department}</strong>
         <span>${visit.doctor} · ${visit.status} · risk: ${visit.risk}</span>
         <small>${visit.complaint}</small>
+        <div class="queue-actions">
+          <button type="button" data-visit-status="${visit.id}|waiting">候诊</button>
+          <button type="button" data-visit-status="${visit.id}|in_consult">接诊</button>
+          <button type="button" data-visit-status="${visit.id}|done">完成</button>
+        </div>
       </article>
     `);
     list.innerHTML = rows.join("") || `<article class="data-item"><span>${state.lang === "zh" ? "暂无挂号记录" : "No visits yet"}</span></article>`;
+    list.querySelectorAll("[data-visit-status]").forEach((button) => {
+      button.disabled = !hasRole("doctor", "admin");
+      button.addEventListener("click", async () => {
+        const [id, status] = button.dataset.visitStatus.split("|");
+        await updateVisitStatus(id, status);
+      });
+    });
   }
 
   const visitCount = document.querySelector("#visitCount");
@@ -652,6 +713,28 @@ function renderDatabase() {
       status.textContent = state.lang === "zh" ? "本地数据库已保存" : "Local DB saved";
     }
   }
+  applyPermissions();
+}
+
+async function updateVisitStatus(id, nextStatus) {
+  if (!hasRole("doctor", "admin")) {
+    alert(state.lang === "zh" ? "当前角色不能更新就诊状态。" : "Current role cannot update visit status.");
+    return;
+  }
+
+  const visit = state.db.visits.find((item) => item.id === id);
+  if (!visit) return;
+  visit.status = nextStatus;
+  addAudit(`更新就诊状态：${visit.id} ${nextStatus}`);
+  try {
+    await syncVisitStatusToSupabase(visit);
+    state.remoteReady = true;
+  } catch (error) {
+    addAudit(`Supabase 更新状态失败：${error.message}`);
+    state.remoteReady = false;
+  }
+  saveDatabase();
+  renderDatabase();
 }
 
 function renderRole() {
@@ -690,6 +773,7 @@ function renderRole() {
       status.textContent = state.lang === "zh" ? "演示角色模式" : "Demo role mode";
     }
   }
+  applyPermissions();
 }
 
 function resetDemoData() {

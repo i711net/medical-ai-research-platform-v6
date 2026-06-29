@@ -83,6 +83,8 @@ GitHub 页面里应该能直接看到：
 - 本地数据库保存、预览和 JSON 导出
 - Supabase 正式数据库表结构
 - Supabase Auth 登录和角色权限 SQL
+- 候诊队列状态流转
+- 医生/学生/管理员按钮权限控制
 
 ## 接 Supabase 时要上传
 
@@ -106,3 +108,11 @@ GitHub 页面里应该能直接看到：
 ```
 
 公开 Demo 用 `public_demo_policies.sql` 更容易演示；真实账号权限用 `auth_role_policies.sql` 更规范。
+
+如果这次只是更新候诊队列状态功能，重新执行：
+
+```text
+sql/auth_role_policies.sql
+```
+
+它会补上挂号状态更新权限。

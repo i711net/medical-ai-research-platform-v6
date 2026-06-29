@@ -570,6 +570,37 @@ meter {
   line-height: 1.35;
 }
 
+.queue-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.queue-actions button {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: white;
+  color: var(--muted);
+  min-height: 28px;
+  padding: 0 9px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.queue-actions button:hover:not(:disabled) {
+  border-color: var(--teal);
+  color: #0f766e;
+}
+
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
 .admin-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

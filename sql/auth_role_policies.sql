@@ -34,8 +34,10 @@ drop policy if exists "authenticated read patients" on patients;
 drop policy if exists "doctors admins insert patients" on patients;
 drop policy if exists "authenticated read visits" on outpatient_visits;
 drop policy if exists "doctors admins insert visits" on outpatient_visits;
+drop policy if exists "doctors admins update visits" on outpatient_visits;
 drop policy if exists "authenticated read records" on medical_records;
 drop policy if exists "doctors admins insert records" on medical_records;
+drop policy if exists "doctors admins update records" on medical_records;
 drop policy if exists "admins read audit logs" on admin_audit_logs;
 drop policy if exists "authenticated insert audit logs" on admin_audit_logs;
 
@@ -71,6 +73,24 @@ with check (
   )
 );
 
+create policy "doctors admins update visits"
+on outpatient_visits for update
+to authenticated
+using (
+  exists (
+    select 1 from clinic_users u
+    where u.auth_user_id = auth.uid()
+      and u.role in ('doctor', 'admin')
+  )
+)
+with check (
+  exists (
+    select 1 from clinic_users u
+    where u.auth_user_id = auth.uid()
+      and u.role in ('doctor', 'admin')
+  )
+);
+
 create policy "authenticated read records"
 on medical_records for select
 to authenticated
@@ -79,6 +99,24 @@ using (true);
 create policy "doctors admins insert records"
 on medical_records for insert
 to authenticated
+with check (
+  exists (
+    select 1 from clinic_users u
+    where u.auth_user_id = auth.uid()
+      and u.role in ('doctor', 'admin')
+  )
+);
+
+create policy "doctors admins update records"
+on medical_records for update
+to authenticated
+using (
+  exists (
+    select 1 from clinic_users u
+    where u.auth_user_id = auth.uid()
+      and u.role in ('doctor', 'admin')
+  )
+)
 with check (
   exists (
     select 1 from clinic_users u

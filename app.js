@@ -398,9 +398,10 @@ async function requestHuggingFaceDiagnosis() {
   const pulseText = document.querySelector("#pulseSelect").selectedOptions[0]?.textContent?.split("/")[0]?.trim() || "弦脉";
   const freeText = document.querySelector("#freeText").value || "";
 
-  output.textContent = state.lang === "zh"
-    ? "正在调用 Hugging Face 中医模型，请稍候..."
-    : "Calling Hugging Face TCM model, please wait...";
+  const sentSummary = state.lang === "zh"
+    ? `已发送到 Hugging Face 中医模型：\n症状：${selectedLabels.join("、") || "未选择"}\n舌象：${tongueText}\n脉象：${pulseText}\n自由描述：${freeText || "无"}\n\n正在等待模型返回...`
+    : `Sent to Hugging Face TCM model:\nSymptoms: ${selectedLabels.join(", ") || "None selected"}\nTongue: ${tongueText}\nPulse: ${pulseText}\nFree text: ${freeText || "None"}\n\nWaiting for model response...`;
+  output.textContent = sentSummary;
 
   try {
     const response = await fetch("/api/ai-diagnose", {
@@ -418,7 +419,9 @@ async function requestHuggingFaceDiagnosis() {
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error || "AI request failed");
-    output.textContent = data.result || "模型没有返回内容。";
+    output.textContent = state.lang === "zh"
+      ? `Hugging Face 模型返回：\n\n${data.result || "模型没有返回内容。"}`
+      : `Hugging Face model response:\n\n${data.result || "The model returned no content."}`;
   } catch (error) {
     output.textContent = state.lang === "zh"
       ? `Hugging Face 模型暂不可用：${error.message}\n\n已保留上方本地规则 + GraphRAG 演示结果。`

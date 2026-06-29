@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>中医西医学习区</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./supabase-config.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark">学</span>
+          <div>
+            <strong>中医西医学习区</strong>
+            <span>Medical Learning Library</span>
+          </div>
+        </div>
+        <nav class="top-actions">
+          <a class="ghost-button" href="./index.html">返回主页</a>
+        </nav>
+      </header>
+
+      <main class="learning-layout">
+        <section class="panel">
+          <div class="panel-heading">
+            <div>
+              <h1>资料目录</h1>
+              <p>支持 PDF、TXT、图片、视频、音频、Office/WPS 文件和外部链接。文件上传与管理在后台完成。</p>
+            </div>
+          </div>
+          <div class="learning-list" id="learningList"></div>
+        </section>
+        <aside class="panel">
+          <h2>阅读/观看</h2>
+          <div id="resourceViewer" class="resource-viewer">请选择左侧资料。</div>
+        </aside>
+      </main>
+    </div>
+    <script src="./learn.js" type="module"></script>
+  </body>
+</html>

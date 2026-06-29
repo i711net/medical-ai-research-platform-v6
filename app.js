@@ -8,6 +8,7 @@ const state = {
   remoteReady: false,
   authUser: null,
   profile: null,
+  currentPassword: "",
   db: {
     visits: [],
     records: [],
@@ -68,6 +69,9 @@ const copy = {
     login: "登录",
     signup: "注册",
     logout: "退出",
+    loginNamePlaceholder: "用户名 / 管理员",
+    loginPasswordPlaceholder: "登录密码",
+    adminEntry: "后台",
     adminTitle: "后台管理员",
     adminSub: "查看运营统计和待处理事项。",
     visitsToday: "今日挂号",
@@ -80,9 +84,12 @@ const copy = {
     inviteTitle: "人员注册码",
     inviteName: "人员姓名",
     inviteEmail: "绑定邮箱",
+    staffLoginName: "登录名",
+    staffPassword: "初始密码",
+    validDays: "可用天数",
     inviteRole: "人员角色",
     inviteCodeOut: "生成注册码",
-    createInvite: "生成并保存注册码",
+    createInvite: "保存人员账号",
     deletePassword: "删除专用密码"
   },
   en: {
@@ -137,6 +144,9 @@ const copy = {
     login: "Log in",
     signup: "Sign up",
     logout: "Log out",
+    loginNamePlaceholder: "Username / admin",
+    loginPasswordPlaceholder: "Password",
+    adminEntry: "Admin",
     adminTitle: "Admin Console",
     adminSub: "Review operational statistics and pending tasks.",
     visitsToday: "Visits today",
@@ -149,22 +159,42 @@ const copy = {
     inviteTitle: "Staff invite codes",
     inviteName: "Staff name",
     inviteEmail: "Bound email",
+    staffLoginName: "Login name",
+    staffPassword: "Initial password",
+    validDays: "Valid days",
     inviteRole: "Staff role",
     inviteCodeOut: "Generated code",
-    createInvite: "Create and save code",
+    createInvite: "Save staff account",
     deletePassword: "Deletion password"
   }
 };
 
 const symptomOptions = [
   { id: "headache", zh: "头痛", en: "Headache" },
+  { id: "frontalHeadache", zh: "前头痛", en: "Frontal headache" },
+  { id: "occipitalHeadache", zh: "后头痛", en: "Occipital headache" },
+  { id: "temporalHeadache", zh: "两侧头痛", en: "Temporal headache" },
+  { id: "vertexHeadache", zh: "巅顶痛", en: "Vertex headache" },
   { id: "bitter", zh: "口苦", en: "Bitter taste" },
   { id: "fever", zh: "发热", en: "Fever" },
+  { id: "chills", zh: "恶寒", en: "Chills" },
+  { id: "alternatingChillsFever", zh: "寒热往来", en: "Alternating chills and fever" },
   { id: "cough", zh: "咳嗽", en: "Cough" },
+  { id: "phlegm", zh: "咳痰", en: "Phlegm" },
+  { id: "wheezing", zh: "喘促", en: "Wheezing" },
   { id: "chestPain", zh: "胸痛", en: "Chest pain" },
+  { id: "chestTightness", zh: "胸闷", en: "Chest tightness" },
+  { id: "palpitation", zh: "心悸", en: "Palpitation" },
   { id: "fatigue", zh: "乏力", en: "Fatigue" },
   { id: "insomnia", zh: "失眠", en: "Insomnia" },
-  { id: "dizziness", zh: "眩晕", en: "Dizziness" }
+  { id: "dreaminess", zh: "多梦", en: "Vivid dreams" },
+  { id: "dizziness", zh: "眩晕", en: "Dizziness" },
+  { id: "nausea", zh: "恶心", en: "Nausea" },
+  { id: "poorAppetite", zh: "纳差", en: "Poor appetite" },
+  { id: "looseStool", zh: "便溏", en: "Loose stool" },
+  { id: "constipation", zh: "便秘", en: "Constipation" },
+  { id: "edema", zh: "水肿", en: "Edema" },
+  { id: "nightSweat", zh: "盗汗", en: "Night sweating" }
 ];
 
 const cases = [
@@ -181,6 +211,33 @@ const cases = [
     en: "Symptoms: fatigue, shortness of breath, pale tongue, deep pulse. Answer: Qi deficiency. Formula: Si Jun Zi Tang."
   }
 ];
+
+const formulaKnowledge = {
+  "天麻钩藤饮": {
+    source: "《杂病证治新义》",
+    composition: "天麻、钩藤、石决明、栀子、黄芩、川牛膝、杜仲、益母草、桑寄生、夜交藤、茯神",
+    usage: "教学资料示例。实际剂量、煎服法和禁忌必须由执业医师辨证决定。",
+    indications: "肝阳上亢所致头痛眩晕、失眠、舌红、脉弦等。",
+    modifications: "热象明显可加强清热；痰湿明显可加化痰利湿；阴虚明显可配养阴潜阳。",
+    modern: "现代常用于高血压相关头晕头痛的研究讨论，但不能替代临床诊断。"
+  },
+  "四君子汤": {
+    source: "《太平惠民和剂局方》",
+    composition: "人参、白术、茯苓、甘草",
+    usage: "教学资料示例。补气基础方，实际应用需辨证。",
+    indications: "脾胃气虚，面色萎白，气短乏力，舌淡脉虚。",
+    modifications: "气虚明显可加黄芪；痰湿可加陈皮、半夏；食少纳呆可配砂仁、木香。",
+    modern: "常作为补气健脾基础方用于教学和研究。"
+  },
+  "川芎茶调散": {
+    source: "《太平惠民和剂局方》",
+    composition: "川芎、白芷、羌活、细辛、防风、荆芥、薄荷、甘草、茶清",
+    usage: "教学资料示例。现代临床对细辛等药需严格遵循规范和医嘱。",
+    indications: "外感风邪头痛，或偏正头痛、恶寒发热等。",
+    modifications: "风寒重加辛温解表；风热明显需调整清疏；久痛夹瘀可酌加活血。",
+    modern: "需注意传统方中个别药物的现代安全规范，必要时由医师选择替代方案。"
+  }
+};
 
 const graphSets = {
   liver: [
@@ -215,6 +272,7 @@ function hasRole(...roles) {
 function applyPermissions() {
   const canManageClinic = hasRole("doctor", "admin");
   const canAdmin = hasRole("admin");
+  const canUseAi = !state.authUser || hasRole("doctor", "admin");
   [
     "#registrationForm input",
     "#registrationForm select",
@@ -228,10 +286,22 @@ function applyPermissions() {
     });
   });
 
-  ["#resetButton", "#createInviteButton", "#inviteName", "#inviteEmail", "#inviteRole"].forEach((selector) => {
+  ["#resetButton", "#createInviteButton", "#inviteName", "#staffLoginName", "#staffPassword", "#inviteRole", "#validDays"].forEach((selector) => {
     document.querySelectorAll(selector).forEach((el) => {
       el.disabled = !canAdmin;
       el.title = canAdmin ? "" : (state.lang === "zh" ? "仅管理员可操作" : "Admin only");
+    });
+  });
+
+  [
+    "#diagnosisForm button",
+    "#diagnosisForm select",
+    "#diagnosisForm textarea",
+    "#diagnosisForm input"
+  ].forEach((selector) => {
+    document.querySelectorAll(selector).forEach((el) => {
+      el.disabled = !canUseAi;
+      el.title = canUseAi ? "" : (state.lang === "zh" ? "学生身份不能使用 AI 问诊" : "Student role cannot use AI diagnosis");
     });
   });
 }
@@ -272,11 +342,13 @@ function analyze() {
   const selected = state.selectedSymptoms;
   const tongue = document.querySelector("#tongueSelect").value;
   const pulse = document.querySelector("#pulseSelect").value;
+  const freeText = document.querySelector("#freeText").value || "";
+  const mentions = (terms) => terms.some((term) => freeText.toLowerCase().includes(term.toLowerCase()));
 
   let profile = "liver";
-  if (selected.has("fever") || selected.has("cough")) profile = "exterior";
-  if (selected.has("fatigue") || tongue === "pale" || pulse === "deep") profile = "qi";
-  if (selected.has("chestPain")) profile = "liver";
+  if (selected.has("fever") || selected.has("cough") || selected.has("occipitalHeadache") || mentions(["发热", "咳嗽", "后头痛", "恶寒", "fever", "cough"])) profile = "exterior";
+  if (selected.has("fatigue") || selected.has("poorAppetite") || selected.has("looseStool") || tongue === "pale" || pulse === "deep" || mentions(["乏力", "纳差", "便溏", "fatigue"])) profile = "qi";
+  if (selected.has("chestPain") || selected.has("chestTightness") || mentions(["胸痛", "胸闷", "chest pain"])) profile = "liver";
   state.lastProfile = profile;
 
   const zhResults = {
@@ -445,8 +517,33 @@ async function signIn() {
     return;
   }
 
-  const email = document.querySelector("#authEmail").value.trim();
+  const loginName = document.querySelector("#authEmail").value.trim();
   const password = document.querySelector("#authPassword").value;
+  const appLogin = await state.supabase.rpc("app_login", {
+    p_login_name: loginName,
+    p_password: password
+  });
+
+  if (!appLogin.error && appLogin.data?.length) {
+    const profile = appLogin.data[0];
+    state.currentPassword = password;
+    state.authUser = { id: profile.id, email: profile.login_name };
+    state.profile = {
+      id: profile.id,
+      email: profile.login_name,
+      display_name: profile.display_name,
+      role: profile.role,
+      expires_at: profile.expires_at,
+      days_remaining: profile.days_remaining
+    };
+    state.role = profile.role;
+    addAudit(`账号登录：${profile.login_name}`);
+    renderRole();
+    renderDatabase();
+    return;
+  }
+
+  const email = loginName;
   const { data, error } = await state.supabase.auth.signInWithPassword({ email, password });
   if (error) {
     alert(error.message);
@@ -454,6 +551,7 @@ async function signIn() {
   }
 
   state.authUser = data.user;
+  state.currentPassword = password;
   await loadUserProfile();
   if (!state.profile) {
     alert(state.lang === "zh" ? "此账号没有角色资料，请联系管理员分配注册码。" : "This account has no role profile. Ask an administrator for an invite code.");
@@ -464,10 +562,12 @@ async function signIn() {
 }
 
 async function signOut() {
-  if (!state.supabase) return;
-  await state.supabase.auth.signOut();
+  if (state.supabase && state.authUser?.email?.includes("@")) {
+    await state.supabase.auth.signOut();
+  }
   state.authUser = null;
   state.profile = null;
+  state.currentPassword = "";
   addAudit("账号退出");
   renderRole();
   renderDatabase();
@@ -598,34 +698,39 @@ async function syncVisitStatusToSupabase(visit) {
   await syncAuditToSupabase(`更新就诊状态：${visit.id} ${visit.status}`, { visit_no: visit.id, status: visit.status });
 }
 
-function generateInviteCode() {
-  const part = Math.random().toString(36).slice(2, 8).toUpperCase();
-  return `TCM-${part}`;
-}
-
 async function createInviteCode() {
   if (!hasRole("admin")) {
-    alert(state.lang === "zh" ? "仅管理员可以生成注册码。" : "Only administrators can create invite codes.");
+    alert(state.lang === "zh" ? "仅管理员可以创建人员账号。" : "Only administrators can create staff accounts.");
     return;
   }
-  const code = generateInviteCode();
-  const invite = {
-    code,
-    display_name: document.querySelector("#inviteName").value.trim() || "New staff",
-    email: document.querySelector("#inviteEmail").value.trim() || null,
-    role: document.querySelector("#inviteRole").value
-  };
+  const displayName = document.querySelector("#inviteName").value.trim() || "New staff";
+  const loginName = document.querySelector("#staffLoginName").value.trim();
+  const password = document.querySelector("#staffPassword").value.trim();
+  const role = document.querySelector("#inviteRole").value;
+  const validDays = Number(document.querySelector("#validDays").value || 30);
+
+  if (!loginName || password.length < 6) {
+    alert(state.lang === "zh" ? "请填写登录名，并设置至少 6 位初始密码。" : "Enter a login name and an initial password of at least 6 characters.");
+    return;
+  }
 
   if (state.supabase) {
-    const { error } = await state.supabase.from("invitation_codes").insert(invite);
+    const { error } = await state.supabase.rpc("admin_create_app_user", {
+      p_admin_login_name: state.profile?.email,
+      p_admin_password: state.currentPassword,
+      p_login_name: loginName,
+      p_password: password,
+      p_display_name: displayName,
+      p_role: role,
+      p_valid_days: validDays
+    });
     if (error) {
       alert(error.message);
       return;
     }
   }
 
-  document.querySelector("#generatedInviteCode").value = code;
-  addAudit(`生成注册码：${invite.display_name} ${invite.role}`);
+  addAudit(`创建人员账号：${displayName} ${role} ${validDays}天`);
   saveDatabase();
   renderDatabase();
 }
@@ -847,8 +952,8 @@ function renderRole() {
   if (status) {
     if (state.authUser && state.profile) {
       status.textContent = state.lang === "zh"
-        ? `已登录：${state.profile.email} · ${state.profile.role}`
-        : `Signed in: ${state.profile.email} · ${state.profile.role}`;
+        ? `已登录：${state.profile.display_name || state.profile.email} · ${state.profile.role}${state.profile.days_remaining != null ? ` · 剩余 ${state.profile.days_remaining} 天` : ""}`
+        : `Signed in: ${state.profile.display_name || state.profile.email} · ${state.profile.role}${state.profile.days_remaining != null ? ` · ${state.profile.days_remaining} days left` : ""}`;
     } else if (state.authUser) {
       status.textContent = state.lang === "zh" ? "已登录，角色资料待创建" : "Signed in, profile pending";
     } else if (state.supabase) {
@@ -857,7 +962,34 @@ function renderRole() {
       status.textContent = state.lang === "zh" ? "演示角色模式" : "Demo role mode";
     }
   }
+  document.body.classList.toggle("admin-mode", state.role === "admin" && !!state.authUser);
+  document.querySelector("#adminEntryButton")?.classList.toggle("visible", state.role === "admin" && !!state.authUser);
   applyPermissions();
+}
+
+function openKnowledge(name) {
+  const normalized = Object.keys(formulaKnowledge).find((key) => name.includes(key));
+  const item = formulaKnowledge[normalized];
+  const popover = document.querySelector("#knowledgePopover");
+  const title = document.querySelector("#knowledgeTitle");
+  const body = document.querySelector("#knowledgeBody");
+  if (!popover || !title || !body) return;
+  title.textContent = normalized || name;
+  if (!item) {
+    body.innerHTML = `<p>后台尚未录入该方剂或中药说明。管理员可在方药知识库中补充。</p>`;
+  } else {
+    body.innerHTML = `
+      <dl>
+        <dt>出处</dt><dd>${item.source}</dd>
+        <dt>组成</dt><dd>${item.composition}</dd>
+        <dt>用法用量</dt><dd>${item.usage}</dd>
+        <dt>适用范围</dt><dd>${item.indications}</dd>
+        <dt>加减应用</dt><dd>${item.modifications}</dd>
+        <dt>现代说明</dt><dd>${item.modern}</dd>
+      </dl>
+    `;
+  }
+  popover.hidden = false;
 }
 
 function resetDemoData() {
@@ -917,6 +1049,10 @@ document.querySelectorAll("[data-input-lang]").forEach((button) => {
 
 document.querySelector("#diagnosisForm").addEventListener("submit", (event) => {
   event.preventDefault();
+  if (state.authUser && !hasRole("doctor", "admin")) {
+    alert(state.lang === "zh" ? "学生身份不能使用 AI 推理。" : "Student role cannot use AI reasoning.");
+    return;
+  }
   analyze();
 });
 
@@ -936,7 +1072,16 @@ document.querySelector("#saveRecordButton")?.addEventListener("click", saveCurre
 document.querySelector("#signupButton")?.addEventListener("click", signUp);
 document.querySelector("#loginButton")?.addEventListener("click", signIn);
 document.querySelector("#logoutButton")?.addEventListener("click", signOut);
+document.querySelector("#adminEntryButton")?.addEventListener("click", () => {
+  document.querySelector("#adminBackend")?.scrollIntoView({ behavior: "smooth", block: "start" });
+});
 document.querySelector("#createInviteButton")?.addEventListener("click", createInviteCode);
+document.querySelector("#formulaName")?.addEventListener("click", () => {
+  openKnowledge(document.querySelector("#formulaName").textContent || "");
+});
+document.querySelector("#closeKnowledgeButton")?.addEventListener("click", () => {
+  document.querySelector("#knowledgePopover").hidden = true;
+});
 document.querySelector("#clearSelectionButton")?.addEventListener("click", () => {
   state.selectedSymptoms.clear();
   renderSymptoms();

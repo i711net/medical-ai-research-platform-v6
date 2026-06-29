@@ -89,6 +89,46 @@ textarea {
   gap: 8px;
 }
 
+.top-login {
+  display: grid;
+  grid-template-columns: 128px 128px auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.top-login input {
+  min-height: 38px;
+  font-size: 13px;
+}
+
+.session-strip {
+  margin: -4px 0 12px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.admin-entry {
+  display: none;
+}
+
+.admin-entry.visible {
+  display: inline-flex;
+}
+
+.hidden-panel {
+  display: none;
+}
+
+.admin-backend,
+.database-panel {
+  display: none;
+}
+
+.admin-mode .admin-backend,
+.admin-mode .database-panel {
+  display: block;
+}
+
 .primary-button,
 .ghost-button,
 .icon-button,
@@ -343,6 +383,11 @@ textarea {
 .formula-box strong {
   display: block;
   line-height: 1.35;
+}
+
+#formulaName {
+  cursor: pointer;
+  color: #0f766e;
 }
 
 .result-card p,
@@ -661,6 +706,84 @@ textarea:disabled {
   border-color: #1e293b;
 }
 
+.learning-layout {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.85fr) minmax(360px, 1.15fr);
+  gap: 14px;
+}
+
+.learning-list {
+  display: grid;
+  gap: 8px;
+}
+
+.resource-row {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
+  padding: 12px;
+  cursor: pointer;
+}
+
+.resource-row span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.resource-viewer {
+  min-height: 420px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
+  padding: 14px;
+  line-height: 1.7;
+}
+
+.knowledge-popover {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  background: rgba(15, 23, 42, 0.36);
+  padding: 18px;
+}
+
+.knowledge-card {
+  width: min(620px, 100%);
+  max-height: min(720px, 90vh);
+  overflow: auto;
+  border-radius: 8px;
+  background: white;
+  border: 1px solid var(--line);
+  box-shadow: 0 28px 70px rgba(15, 23, 42, 0.24);
+  padding: 18px;
+}
+
+.knowledge-card h3 {
+  margin: 0 0 12px;
+}
+
+.knowledge-card dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.knowledge-card dt {
+  font-weight: 800;
+}
+
+.knowledge-card dd {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
 .danger {
   color: var(--red);
 }
@@ -704,8 +827,10 @@ textarea:disabled {
   }
 
   .top-actions,
+  .top-login,
   .two-col,
-  .chip-grid {
+  .chip-grid,
+  .learning-layout {
     grid-template-columns: 1fr;
     display: grid;
   }

@@ -88,6 +88,9 @@ GitHub 页面里应该能直接看到：
 - 医生/学生/管理员按钮权限控制
 - 管理员注册码分配
 - 删除记录二次密码校验
+- 管理员分配登录名、密码、角色和可用天数
+- 中医西医学习区页面
+- 症状、舌象、脉象、方剂、中药知识库 SQL
 
 ## 接 Supabase 时要上传
 
@@ -124,6 +127,7 @@ sql/auth_role_policies.sql
 
 ```text
 sql/admin_security.sql
+sql/app_accounts_and_knowledge.sql
 ```
 
 然后在 SQL Editor 里运行 `admin_security.sql` 文件底部注释里的初始化语句，并把 `CHANGE_THIS_DELETE_PASSWORD` 改成自己的删除专用密码。

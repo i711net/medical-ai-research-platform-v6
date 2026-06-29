@@ -19,10 +19,17 @@
         </div>
         <nav class="top-actions" aria-label="platform actions">
           <button class="icon-button" id="langToggle" type="button" title="Switch language">中 / EN</button>
+          <div class="top-login">
+            <input id="authEmail" type="text" data-i18n-placeholder="loginNamePlaceholder" placeholder="用户名 / 管理员" autocomplete="username" />
+            <input id="authPassword" type="password" data-i18n-placeholder="loginPasswordPlaceholder" placeholder="登录密码" autocomplete="current-password" />
+            <button class="primary-button" id="loginButton" type="button" data-i18n="login">登录</button>
+          </div>
+          <button class="ghost-button admin-entry" id="adminEntryButton" type="button" data-i18n="adminEntry">后台</button>
+          <button class="ghost-button" id="logoutButton" type="button" data-i18n="logout">退出</button>
           <a class="ghost-button" href="https://github.com/" target="_blank" rel="noreferrer">GitHub</a>
-          <a class="primary-button" href="#deploy" data-i18n="deploy">免费部署路线</a>
         </nav>
       </header>
+      <div class="session-strip" id="authStatus">演示模式：医生功能可预览</div>
 
       <main class="workspace">
         <section class="panel intake-panel">
@@ -151,12 +158,12 @@
           </div>
           <button class="ghost-button" id="examButton" type="button" data-i18n="startExam">出题</button>
         </article>
-        <article class="module-panel" id="deploy">
+        <article class="module-panel">
           <div>
-            <h3 data-i18n="deployTitle">免费资源部署</h3>
-            <p>GitHub + Vercel/Cloudflare Pages + Supabase + HuggingFace Spaces/API。</p>
+            <h3 data-i18n="learningTitle">中医西医学习区</h3>
+            <p data-i18n="learningSub">医学图书、视频、音频、链接资料目录。</p>
           </div>
-          <a class="ghost-button" href="./README.md" data-i18n="readDocs">查看说明</a>
+          <a class="ghost-button" href="./learn.html" target="_blank" data-i18n="openLearning">打开学习区</a>
         </article>
       </section>
 
@@ -170,7 +177,7 @@
         </div>
 
         <div class="operations-grid">
-          <section class="panel ops-panel">
+          <section class="panel ops-panel account-panel hidden-panel">
             <div class="panel-heading compact">
               <div>
                 <h2 data-i18n="registrationTitle">门诊挂号</h2>
@@ -238,11 +245,11 @@
             <form id="authForm" class="stack auth-form">
               <label class="select-field">
                 <span data-i18n="email">邮箱</span>
-                <input id="authEmail" type="email" placeholder="doctor@example.com" autocomplete="email" />
+                <input id="authEmailOld" type="email" placeholder="doctor@example.com" autocomplete="email" />
               </label>
               <label class="select-field">
                 <span data-i18n="password">密码</span>
-                <input id="authPassword" type="password" placeholder="至少 6 位" autocomplete="current-password" />
+                <input id="authPasswordOld" type="password" placeholder="至少 6 位" autocomplete="current-password" />
               </label>
               <label class="select-field">
                 <span data-i18n="displayName">人员姓名</span>
@@ -253,9 +260,9 @@
                 <input id="inviteCode" type="text" placeholder="由管理员分配" autocomplete="off" />
               </label>
               <div class="record-actions">
-                <button class="primary-button" id="loginButton" type="button" data-i18n="login">登录</button>
-                <button class="ghost-button" id="signupButton" type="button" data-i18n="signup">注册</button>
-                <button class="ghost-button danger" id="logoutButton" type="button" data-i18n="logout">退出</button>
+                <button class="primary-button" id="legacyLoginButton" type="button" data-i18n="login">登录</button>
+                <button class="ghost-button" id="legacySignupButton" type="button" data-i18n="signup">注册</button>
+                <button class="ghost-button danger" id="legacyLogoutButton" type="button" data-i18n="logout">退出</button>
               </div>
             </form>
             <div class="role-switch" id="roleSwitch">
@@ -270,7 +277,7 @@
             </div>
           </section>
 
-          <section class="panel ops-panel">
+          <section class="panel ops-panel admin-backend" id="adminBackend">
             <div class="panel-heading compact">
               <div>
                 <h2 data-i18n="adminTitle">后台管理员</h2>
@@ -287,29 +294,33 @@
               <h3 data-i18n="inviteTitle">人员注册码</h3>
               <div class="two-col">
                 <label class="select-field">
-                  <span data-i18n="inviteName">人员姓名</span>
-                  <input id="inviteName" type="text" placeholder="王医生" />
-                </label>
-                <label class="select-field">
-                  <span data-i18n="inviteEmail">绑定邮箱</span>
-                  <input id="inviteEmail" type="email" placeholder="可选" />
-                </label>
-              </div>
-              <div class="two-col">
-                <label class="select-field">
-                  <span data-i18n="inviteRole">人员角色</span>
+                <span data-i18n="inviteName">人员姓名</span>
+                <input id="inviteName" type="text" placeholder="王医生" />
+              </label>
+              <label class="select-field">
+                  <span data-i18n="staffLoginName">登录名</span>
+                  <input id="staffLoginName" type="text" placeholder="wang-doctor" />
+              </label>
+            </div>
+            <div class="two-col">
+              <label class="select-field">
+                <span data-i18n="inviteRole">人员角色</span>
                   <select id="inviteRole">
                     <option value="doctor">医生 / Doctor</option>
                     <option value="student">学生 / Student</option>
                     <option value="admin">管理员 / Admin</option>
                   </select>
-                </label>
-                <label class="select-field">
-                  <span data-i18n="inviteCodeOut">生成注册码</span>
-                  <input id="generatedInviteCode" type="text" readonly />
-                </label>
-              </div>
-              <button class="ghost-button" id="createInviteButton" type="button" data-i18n="createInvite">生成并保存注册码</button>
+              </label>
+              <label class="select-field">
+                  <span data-i18n="staffPassword">初始密码</span>
+                  <input id="staffPassword" type="text" placeholder="至少 6 位" />
+              </label>
+            </div>
+            <label class="select-field">
+              <span data-i18n="validDays">可用天数</span>
+              <input id="validDays" type="number" min="1" value="30" />
+            </label>
+              <button class="ghost-button" id="createInviteButton" type="button" data-i18n="createInvite">保存人员账号</button>
             </div>
           </section>
 
@@ -332,6 +343,14 @@
           </section>
         </div>
       </section>
+    </div>
+
+    <div class="knowledge-popover" id="knowledgePopover" hidden>
+      <div class="knowledge-card">
+        <button class="ghost-button" id="closeKnowledgeButton" type="button">关闭</button>
+        <h3 id="knowledgeTitle">方剂说明</h3>
+        <div id="knowledgeBody"></div>
+      </div>
     </div>
 
     <script src="./supabase-config.js"></script>

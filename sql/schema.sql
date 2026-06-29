@@ -30,6 +30,7 @@ create table if not exists graph_edges (
 
 create table if not exists clinic_users (
   id uuid primary key default gen_random_uuid(),
+  auth_user_id uuid unique references auth.users(id) on delete cascade,
   email text unique not null,
   display_name text not null,
   role text not null check (role in ('doctor', 'student', 'admin')),

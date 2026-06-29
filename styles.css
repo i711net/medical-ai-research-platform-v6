@@ -531,6 +531,21 @@ meter {
   font-size: 13px;
 }
 
+.account-card small {
+  display: block;
+  margin-top: 10px;
+  color: #0f766e;
+  font-size: 12px;
+}
+
+.auth-form {
+  margin-bottom: 12px;
+}
+
+.auth-form .record-actions {
+  margin-bottom: 0;
+}
+
 .data-list {
   display: grid;
   gap: 8px;

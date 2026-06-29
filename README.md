@@ -69,6 +69,34 @@ OPENAI_API_KEY=...
 
 `sql/public_demo_policies.sql` 是公开演示策略，适合 Demo 阶段。正式上线账号系统后，应改成基于 Supabase Auth 用户角色的更严格 RLS。
 
+## V6.1 账号登录与角色权限
+
+本项目支持 Supabase Auth 邮箱密码登录。前端会根据 `clinic_users.role` 切换医生、学生、管理员工作台。
+
+如果你已经执行过旧版 `schema.sql`，先执行：
+
+```text
+sql/auth_migration.sql
+```
+
+然后执行：
+
+```text
+sql/auth_role_policies.sql
+```
+
+Supabase 控制台建议设置：
+
+1. Authentication → Providers → Email 开启。
+2. Demo 阶段可以关闭 Confirm email，方便注册后立刻登录。
+3. 正式上线应开启 Confirm email，并收紧 RLS。
+
+角色说明：
+
+- `doctor`：挂号、保存病例、AI 辅助诊断
+- `student`：病例学习、考试训练
+- `admin`：后台统计、审计、数据管理
+
 ## 部署建议
 
 ### Cloudflare Pages
@@ -114,6 +142,8 @@ A Multimodal GraphRAG-Based Bilingual Medical AI System for Traditional Chinese 
 - `sql/schema.sql`：Supabase / pgvector / 门诊业务表结构
 - `sql/seed.sql`：知识图谱和医学知识种子数据
 - `sql/public_demo_policies.sql`：公开 Demo 的 Supabase RLS 策略
+- `sql/auth_migration.sql`：给旧数据库增加 Auth 用户关联字段
+- `sql/auth_role_policies.sql`：Supabase Auth 角色权限策略
 - `supabase-config.js`：Supabase URL 和 anon key 配置
 - `api-examples/huggingface-tongue.js`：HuggingFace 舌诊接口示例
 - `assets/v6-ui-concept.png`：本次生成的 UI 概念图

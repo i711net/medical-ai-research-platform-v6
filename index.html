@@ -232,9 +232,32 @@
             <div class="panel-heading compact">
               <div>
                 <h2 data-i18n="accountTitle">账号系统</h2>
-                <p data-i18n="accountSub">模拟医生、学生、管理员三类角色。</p>
+                <p data-i18n="accountSub">Supabase Auth 登录，并绑定医生、学生、管理员角色。</p>
               </div>
             </div>
+            <form id="authForm" class="stack auth-form">
+              <label class="select-field">
+                <span data-i18n="email">邮箱</span>
+                <input id="authEmail" type="email" placeholder="doctor@example.com" autocomplete="email" />
+              </label>
+              <label class="select-field">
+                <span data-i18n="password">密码</span>
+                <input id="authPassword" type="password" placeholder="至少 6 位" autocomplete="current-password" />
+              </label>
+              <label class="select-field">
+                <span data-i18n="signupRole">注册角色</span>
+                <select id="signupRole">
+                  <option value="doctor">医生 / Doctor</option>
+                  <option value="student">学生 / Student</option>
+                  <option value="admin">管理员 / Admin</option>
+                </select>
+              </label>
+              <div class="record-actions">
+                <button class="primary-button" id="loginButton" type="button" data-i18n="login">登录</button>
+                <button class="ghost-button" id="signupButton" type="button" data-i18n="signup">注册</button>
+                <button class="ghost-button danger" id="logoutButton" type="button" data-i18n="logout">退出</button>
+              </div>
+            </form>
             <div class="role-switch" id="roleSwitch">
               <button class="active" type="button" data-role="doctor">医生</button>
               <button type="button" data-role="student">学生</button>
@@ -243,6 +266,7 @@
             <div class="account-card">
               <strong id="activeRole">医生工作台</strong>
               <p id="roleDescription">可查看挂号、保存病例、生成 AI 诊断建议。</p>
+              <small id="authStatus">Demo role mode</small>
             </div>
           </section>
 

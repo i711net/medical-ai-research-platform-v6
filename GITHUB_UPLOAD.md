@@ -39,7 +39,9 @@ medical-ai-research-platform-v6/
 ├── sql/
 │   ├── schema.sql
 │   ├── seed.sql
-│   └── public_demo_policies.sql
+│   ├── public_demo_policies.sql
+│   ├── auth_migration.sql
+│   └── auth_role_policies.sql
 └── api-examples/
     └── huggingface-tongue.js
 ```
@@ -80,7 +82,27 @@ GitHub 页面里应该能直接看到：
 - 后台统计
 - 本地数据库保存、预览和 JSON 导出
 - Supabase 正式数据库表结构
+- Supabase Auth 登录和角色权限 SQL
 
 ## 接 Supabase 时要上传
 
 如果已经在 `supabase-config.js` 填好 Supabase URL 和 anon key，也要把它上传到 GitHub。注意只能填 `anon public` key，不能填 `service_role` key。
+
+## 接账号系统时执行顺序
+
+如果你已经执行过旧版 SQL：
+
+```text
+1. sql/auth_migration.sql
+2. sql/auth_role_policies.sql
+```
+
+如果是全新 Supabase 项目：
+
+```text
+1. sql/schema.sql
+2. sql/seed.sql
+3. sql/public_demo_policies.sql 或 sql/auth_role_policies.sql
+```
+
+公开 Demo 用 `public_demo_policies.sql` 更容易演示；真实账号权限用 `auth_role_policies.sql` 更规范。

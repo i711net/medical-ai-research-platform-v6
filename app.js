@@ -6,6 +6,8 @@ const state = {
   lastProfile: "liver",
   supabase: null,
   remoteReady: false,
+  authUser: null,
+  profile: null,
   db: {
     visits: [],
     records: [],
@@ -58,7 +60,13 @@ const copy = {
     saveRecord: "保存当前病例",
     clearSelection: "清空选择",
     accountTitle: "账号系统",
-    accountSub: "模拟医生、学生、管理员三类角色。",
+    accountSub: "Supabase Auth 登录，并绑定医生、学生、管理员角色。",
+    email: "邮箱",
+    password: "密码",
+    signupRole: "注册角色",
+    login: "登录",
+    signup: "注册",
+    logout: "退出",
     adminTitle: "后台管理员",
     adminSub: "查看运营统计和待处理事项。",
     visitsToday: "今日挂号",
@@ -113,7 +121,13 @@ const copy = {
     saveRecord: "Save current case",
     clearSelection: "Clear selection",
     accountTitle: "Account System",
-    accountSub: "Simulated doctor, student, and administrator roles.",
+    accountSub: "Supabase Auth login with doctor, student, and administrator roles.",
+    email: "Email",
+    password: "Password",
+    signupRole: "Signup role",
+    login: "Log in",
+    signup: "Sign up",
+    logout: "Log out",
     adminTitle: "Admin Console",
     adminSub: "Review operational statistics and pending tasks.",
     visitsToday: "Visits today",
@@ -294,8 +308,127 @@ async function loadDatabase() {
   }
 
   if (state.supabase) {
+    await initAuthSession();
     await loadRemoteDatabase();
   }
+}
+
+async function initAuthSession() {
+  const { data } = await state.supabase.auth.getSession();
+  state.authUser = data.session?.user || null;
+  if (state.authUser) await loadUserProfile();
+  state.supabase.auth.onAuthStateChange(async (_event, session) => {
+    state.authUser = session?.user || null;
+    state.profile = null;
+    if (state.authUser) await loadUserProfile();
+    renderRole();
+    renderDatabase();
+  });
+}
+
+async function loadUserProfile() {
+  if (!state.supabase || !state.authUser) return;
+  const { data, error } = await state.supabase
+    .from("clinic_users")
+    .select("id, email, display_name, role")
+    .eq("auth_user_id", state.authUser.id)
+    .maybeSingle();
+
+  if (error) {
+    addAudit(`读取账号角色失败：${error.message}`);
+    return;
+  }
+
+  state.profile = data;
+  if (data?.role) state.role = data.role;
+}
+
+async function createUserProfile(role) {
+  if (!state.supabase || !state.authUser) return;
+  const email = state.authUser.email || document.querySelector("#authEmail")?.value.trim();
+  const displayName = email?.split("@")[0] || "Medical AI User";
+  const { data, error } = await state.supabase
+    .from("clinic_users")
+    .insert({
+      auth_user_id: state.authUser.id,
+      email,
+      display_name: displayName,
+      role
+    })
+    .select("id, email, display_name, role")
+    .single();
+
+  if (error) throw error;
+  state.profile = data;
+  state.role = data.role;
+}
+
+async function signUp() {
+  if (!state.supabase) {
+    alert(state.lang === "zh" ? "请先配置 Supabase。" : "Please configure Supabase first.");
+    return;
+  }
+
+  const email = document.querySelector("#authEmail").value.trim();
+  const password = document.querySelector("#authPassword").value;
+  const role = document.querySelector("#signupRole").value;
+  const { data, error } = await state.supabase.auth.signUp({ email, password });
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  state.authUser = data.user || null;
+  if (data.session && state.authUser) {
+    try {
+      await createUserProfile(role);
+      addAudit(`注册账号：${email} (${role})`);
+    } catch (profileError) {
+      alert(`Profile error: ${profileError.message}`);
+    }
+  } else {
+    alert(state.lang === "zh" ? "注册成功，请按 Supabase 邮件设置完成确认后再登录。" : "Signup succeeded. Confirm the Supabase email before logging in.");
+  }
+  renderRole();
+  renderDatabase();
+}
+
+async function signIn() {
+  if (!state.supabase) {
+    alert(state.lang === "zh" ? "请先配置 Supabase。" : "Please configure Supabase first.");
+    return;
+  }
+
+  const email = document.querySelector("#authEmail").value.trim();
+  const password = document.querySelector("#authPassword").value;
+  const { data, error } = await state.supabase.auth.signInWithPassword({ email, password });
+  if (error) {
+    alert(error.message);
+    return;
+  }
+
+  state.authUser = data.user;
+  await loadUserProfile();
+  if (!state.profile) {
+    try {
+      await createUserProfile(document.querySelector("#signupRole").value);
+    } catch (profileError) {
+      alert(`Profile error: ${profileError.message}`);
+    }
+  }
+  addAudit(`账号登录：${email}`);
+  renderRole();
+  renderDatabase();
+}
+
+async function signOut() {
+  if (!state.supabase) return;
+  await state.supabase.auth.signOut();
+  state.authUser = null;
+  state.profile = null;
+  addAudit("账号退出");
+  renderRole();
+  renderDatabase();
 }
 
 function saveDatabase() {
@@ -539,6 +672,24 @@ function renderRole() {
   const descEl = document.querySelector("#roleDescription");
   if (titleEl) titleEl.textContent = title;
   if (descEl) descEl.textContent = desc;
+  document.querySelectorAll("[data-role]").forEach((el) => {
+    el.classList.toggle("active", el.dataset.role === state.role);
+  });
+
+  const status = document.querySelector("#authStatus");
+  if (status) {
+    if (state.authUser && state.profile) {
+      status.textContent = state.lang === "zh"
+        ? `已登录：${state.profile.email} · ${state.profile.role}`
+        : `Signed in: ${state.profile.email} · ${state.profile.role}`;
+    } else if (state.authUser) {
+      status.textContent = state.lang === "zh" ? "已登录，角色资料待创建" : "Signed in, profile pending";
+    } else if (state.supabase) {
+      status.textContent = state.lang === "zh" ? "Supabase Auth 已启用，当前未登录" : "Supabase Auth enabled, not signed in";
+    } else {
+      status.textContent = state.lang === "zh" ? "演示角色模式" : "Demo role mode";
+    }
+  }
 }
 
 function resetDemoData() {
@@ -614,6 +765,9 @@ document.querySelector("#examButton").addEventListener("click", () => {
 
 document.querySelector("#registrationForm")?.addEventListener("submit", createVisit);
 document.querySelector("#saveRecordButton")?.addEventListener("click", saveCurrentRecord);
+document.querySelector("#signupButton")?.addEventListener("click", signUp);
+document.querySelector("#loginButton")?.addEventListener("click", signIn);
+document.querySelector("#logoutButton")?.addEventListener("click", signOut);
 document.querySelector("#clearSelectionButton")?.addEventListener("click", () => {
   state.selectedSymptoms.clear();
   renderSymptoms();

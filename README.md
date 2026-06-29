@@ -52,7 +52,9 @@ http://localhost:4173
 2. 打开 SQL Editor。
 3. 执行 `sql/schema.sql`。
 4. 执行 `sql/seed.sql`。
-5. 后续可把浏览器 `localStorage` 模拟数据替换为 Supabase API 调用。
+5. 执行 `sql/public_demo_policies.sql`，允许公开 Demo 用 anon key 读写挂号和病例。
+6. 把 `supabase-config.js` 里的 `url` 和 `anonKey` 改成 Supabase 项目的值。
+7. 上传更新后的文件，Vercel 会自动重新部署。
 
 建议环境变量：
 
@@ -62,6 +64,10 @@ SUPABASE_SERVICE_ROLE_KEY=...
 HF_TOKEN=...
 OPENAI_API_KEY=...
 ```
+
+当前静态网站版本不使用 Vercel 环境变量读取前端配置，而是使用 `supabase-config.js`。只填写 Supabase `anon public` key，不要填写 `service_role` key。
+
+`sql/public_demo_policies.sql` 是公开演示策略，适合 Demo 阶段。正式上线账号系统后，应改成基于 Supabase Auth 用户角色的更严格 RLS。
 
 ## 部署建议
 
@@ -107,5 +113,7 @@ A Multimodal GraphRAG-Based Bilingual Medical AI System for Traditional Chinese 
 - `server.js`：零依赖本地预览服务
 - `sql/schema.sql`：Supabase / pgvector / 门诊业务表结构
 - `sql/seed.sql`：知识图谱和医学知识种子数据
+- `sql/public_demo_policies.sql`：公开 Demo 的 Supabase RLS 策略
+- `supabase-config.js`：Supabase URL 和 anon key 配置
 - `api-examples/huggingface-tongue.js`：HuggingFace 舌诊接口示例
 - `assets/v6-ui-concept.png`：本次生成的 UI 概念图

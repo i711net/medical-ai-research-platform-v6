@@ -16,6 +16,7 @@ GITHUB_UPLOAD.md
 assets/
 sql/
 api-examples/
+supabase-config.js
 ```
 
 ## GitHub 上的目录结构应为
@@ -27,6 +28,7 @@ medical-ai-research-platform-v6/
 ├── app.js
 ├── server.js
 ├── package.json
+├── supabase-config.js
 ├── README.md
 ├── .gitignore
 ├── GITHUB_UPLOAD.md
@@ -36,7 +38,8 @@ medical-ai-research-platform-v6/
 │   └── v6-render-mobile.png
 ├── sql/
 │   ├── schema.sql
-│   └── seed.sql
+│   ├── seed.sql
+│   └── public_demo_policies.sql
 └── api-examples/
     └── huggingface-tongue.js
 ```
@@ -77,3 +80,7 @@ GitHub 页面里应该能直接看到：
 - 后台统计
 - 本地数据库保存、预览和 JSON 导出
 - Supabase 正式数据库表结构
+
+## 接 Supabase 时要上传
+
+如果已经在 `supabase-config.js` 填好 Supabase URL 和 anon key，也要把它上传到 GitHub。注意只能填 `anon public` key，不能填 `service_role` key。

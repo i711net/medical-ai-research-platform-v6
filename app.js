@@ -4,6 +4,8 @@ const state = {
   selectedSymptoms: new Set(["headache", "insomnia"]),
   role: "doctor",
   lastProfile: "liver",
+  supabase: null,
+  remoteReady: false,
   db: {
     visits: [],
     records: [],
@@ -63,7 +65,7 @@ const copy = {
     recordsSaved: "病例归档",
     highRisk: "高风险提示",
     databaseTitle: "数据库保存与管理",
-    databaseSub: "当前用浏览器 localStorage 模拟；上线后迁移到 Supabase。",
+    databaseSub: "优先保存到 Supabase；未配置时自动使用浏览器 localStorage。",
     exportJson: "导出 JSON",
     resetDemo: "重置演示数据"
   },
@@ -118,7 +120,7 @@ const copy = {
     recordsSaved: "Saved records",
     highRisk: "High-risk flags",
     databaseTitle: "Database Storage and Management",
-    databaseSub: "Uses browser localStorage now; migrate to Supabase for production.",
+    databaseSub: "Saves to Supabase when configured; falls back to browser localStorage.",
     exportJson: "Export JSON",
     resetDemo: "Reset demo data"
   }
@@ -251,7 +253,21 @@ function analyze() {
   renderDatabase();
 }
 
-function loadDatabase() {
+async function initSupabase() {
+  const config = window.SUPABASE_CONFIG || {};
+  const isConfigured = config.url?.startsWith("https://") && config.anonKey?.length > 30;
+  if (!isConfigured) return;
+  try {
+    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+    state.supabase = createClient(config.url, config.anonKey);
+  } catch (error) {
+    state.supabase = null;
+    state.remoteReady = false;
+    console.warn("Supabase SDK load failed:", error);
+  }
+}
+
+async function loadDatabase() {
   const fallback = {
     visits: [
       {
@@ -276,10 +292,132 @@ function loadDatabase() {
   } catch {
     state.db = fallback;
   }
+
+  if (state.supabase) {
+    await loadRemoteDatabase();
+  }
 }
 
 function saveDatabase() {
   localStorage.setItem("medical-ai-v6-db", JSON.stringify(state.db));
+}
+
+async function loadRemoteDatabase() {
+  const [visitsResult, recordsResult, auditResult] = await Promise.all([
+    state.supabase
+      .from("outpatient_visits")
+      .select("id, visit_no, department, doctor_name, chief_complaint, status, risk_level, created_at, patients(name, age)")
+      .order("created_at", { ascending: false })
+      .limit(20),
+    state.supabase
+      .from("medical_records")
+      .select("id, symptoms, tongue_sign, pulse_sign, tcm_diagnosis, western_diagnosis, formula, confidence, created_at")
+      .order("created_at", { ascending: false })
+      .limit(20),
+    state.supabase
+      .from("admin_audit_logs")
+      .select("action, created_at")
+      .order("created_at", { ascending: false })
+      .limit(6)
+  ]);
+
+  if (visitsResult.error || recordsResult.error || auditResult.error) {
+    addAudit(`Supabase 读取失败：${visitsResult.error?.message || recordsResult.error?.message || auditResult.error?.message}`);
+    state.remoteReady = false;
+    return;
+  }
+
+  state.db.visits = visitsResult.data.map((row) => ({
+    id: row.visit_no,
+    supabaseId: row.id,
+    name: row.patients?.name || "未命名",
+    age: row.patients?.age || "",
+    department: row.department,
+    doctor: row.doctor_name,
+    complaint: row.chief_complaint || "",
+    status: row.status,
+    risk: row.risk_level,
+    createdAt: row.created_at
+  }));
+
+  state.db.records = recordsResult.data.map((row) => ({
+    id: row.id,
+    symptoms: row.symptoms || [],
+    tongue: row.tongue_sign,
+    pulse: row.pulse_sign,
+    tcmDiagnosis: row.tcm_diagnosis,
+    westernDiagnosis: row.western_diagnosis,
+    formula: row.formula,
+    confidence: row.confidence,
+    createdAt: row.created_at
+  }));
+
+  state.db.audit = auditResult.data.map((row) => `${row.created_at} ${row.action}`);
+  state.remoteReady = true;
+  saveDatabase();
+}
+
+async function syncVisitToSupabase(visit) {
+  if (!state.supabase) return;
+
+  const patientResult = await state.supabase
+    .from("patients")
+    .insert({ name: visit.name, age: visit.age })
+    .select("id")
+    .single();
+
+  if (patientResult.error) throw patientResult.error;
+
+  const visitResult = await state.supabase
+    .from("outpatient_visits")
+    .insert({
+      visit_no: visit.id,
+      patient_id: patientResult.data.id,
+      department: visit.department,
+      doctor_name: visit.doctor,
+      chief_complaint: visit.complaint,
+      status: visit.status,
+      risk_level: visit.risk
+    })
+    .select("id")
+    .single();
+
+  if (visitResult.error) throw visitResult.error;
+
+  visit.supabaseId = visitResult.data.id;
+  await syncAuditToSupabase(`新增挂号：${visit.id} ${visit.name}`, { visit_no: visit.id });
+  state.remoteReady = true;
+}
+
+async function syncRecordToSupabase(record) {
+  if (!state.supabase) return;
+
+  const latestVisit = state.db.visits.find((visit) => visit.id === record.visitId);
+  const recordResult = await state.supabase
+    .from("medical_records")
+    .insert({
+      visit_id: latestVisit?.supabaseId || null,
+      symptoms: record.symptoms,
+      tongue_sign: record.tongue,
+      pulse_sign: record.pulse,
+      tcm_diagnosis: record.tcmDiagnosis,
+      western_diagnosis: record.westernDiagnosis,
+      formula: record.formula,
+      confidence: Number(record.confidence),
+      graph_path: []
+    });
+
+  if (recordResult.error) throw recordResult.error;
+  await syncAuditToSupabase(`病例归档：${record.id} ${record.tcmDiagnosis}`, { record_id: record.id });
+  state.remoteReady = true;
+}
+
+async function syncAuditToSupabase(action, payload = {}) {
+  if (!state.supabase) return;
+  const result = await state.supabase
+    .from("admin_audit_logs")
+    .insert({ action, payload });
+  if (result.error) throw result.error;
 }
 
 function addAudit(message) {
@@ -288,7 +426,7 @@ function addAudit(message) {
   state.db.audit = state.db.audit.slice(0, 6);
 }
 
-function createVisit(event) {
+async function createVisit(event) {
   event.preventDefault();
   const visit = {
     id: `V${new Date().toISOString().slice(0, 10).replaceAll("-", "")}-${String(state.db.visits.length + 1).padStart(3, "0")}`,
@@ -304,13 +442,19 @@ function createVisit(event) {
 
   state.db.visits.unshift(visit);
   addAudit(`新增挂号：${visit.id} ${visit.name}`);
+  try {
+    await syncVisitToSupabase(visit);
+  } catch (error) {
+    addAudit(`Supabase 写入挂号失败：${error.message}`);
+    state.remoteReady = false;
+  }
   saveDatabase();
   renderDatabase();
   event.target.reset();
   document.querySelector("#patientAge").value = 36;
 }
 
-function saveCurrentRecord() {
+async function saveCurrentRecord() {
   const latestVisit = state.db.visits[0];
   const record = {
     id: `R${new Date().toISOString().slice(0, 10).replaceAll("-", "")}-${String(state.db.records.length + 1).padStart(3, "0")}`,
@@ -329,6 +473,12 @@ function saveCurrentRecord() {
 
   state.db.records.unshift(record);
   addAudit(`病例归档：${record.id} ${record.tcmDiagnosis}`);
+  try {
+    await syncRecordToSupabase(record);
+  } catch (error) {
+    addAudit(`Supabase 写入病例失败：${error.message}`);
+    state.remoteReady = false;
+  }
   saveDatabase();
   renderDatabase();
 }
@@ -360,7 +510,15 @@ function renderDatabase() {
   if (preview) preview.value = JSON.stringify(state.db, null, 2);
 
   const status = document.querySelector("#dbStatus");
-  if (status) status.textContent = state.lang === "zh" ? "本地数据库已保存" : "Local DB saved";
+  if (status) {
+    if (state.remoteReady) {
+      status.textContent = state.lang === "zh" ? "Supabase 云数据库已连接" : "Supabase connected";
+    } else if (state.supabase) {
+      status.textContent = state.lang === "zh" ? "Supabase 待验证，本地备份已保存" : "Supabase pending, local backup saved";
+    } else {
+      status.textContent = state.lang === "zh" ? "本地数据库已保存" : "Local DB saved";
+    }
+  }
 }
 
 function renderRole() {
@@ -487,6 +645,7 @@ document.querySelector("#tongueImage").addEventListener("change", (event) => {
     : `Loaded: ${file.name}. Simulated tongue vision: red tongue, confidence 0.83.`;
 });
 
-loadDatabase();
+await initSupabase();
+await loadDatabase();
 applyLanguage();
 analyze();

@@ -157,7 +157,7 @@ grant execute on function delete_outpatient_visit_with_password(uuid, text) to a
 -- Do not reuse your Supabase or GitHub password.
 --
 -- insert into admin_delete_passwords (id, password_hash)
--- values (1, crypt('CHANGE_THIS_DELETE_PASSWORD', gen_salt('bf')))
+-- values (1, crypt('yb88889999', gen_salt('bf')))
 -- on conflict (id) do update
 -- set password_hash = excluded.password_hash,
 --     updated_at = now();

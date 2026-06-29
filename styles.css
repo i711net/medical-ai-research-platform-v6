@@ -107,12 +107,12 @@ textarea {
   font-size: 13px;
 }
 
-.admin-entry {
-  display: none;
+.top-actions .admin-entry {
+  display: none !important;
 }
 
-.admin-entry.visible {
-  display: inline-flex;
+.top-actions .admin-entry.visible {
+  display: inline-flex !important;
 }
 
 .hidden-panel {

@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Medical AI Research Platform V6 bilingual GraphRAG demo" />
+    <title>Medical AI Research Platform V6</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark">V6</span>
+          <div>
+            <strong>Medical AI Research Platform</strong>
+            <span data-i18n="tagline">中医 + 西医 + GraphRAG + 舌诊 + 双语论文演示系统</span>
+          </div>
+        </div>
+        <nav class="top-actions" aria-label="platform actions">
+          <button class="icon-button" id="langToggle" type="button" title="Switch language">中 / EN</button>
+          <a class="ghost-button" href="https://github.com/" target="_blank" rel="noreferrer">GitHub</a>
+          <a class="primary-button" href="#deploy" data-i18n="deploy">免费部署路线</a>
+        </nav>
+      </header>
+
+      <main class="workspace">
+        <section class="panel intake-panel">
+          <div class="panel-heading">
+            <div>
+              <h1 data-i18n="intakeTitle">双语医学问诊</h1>
+              <p data-i18n="intakeSub">输入症状、舌象、脉象，生成研究/教学用途的 AI 推理结果。</p>
+            </div>
+            <span class="status-dot" data-i18n="researchOnly">Research and education only</span>
+          </div>
+
+          <div class="segmented" role="tablist" aria-label="input language">
+            <button class="active" type="button" data-input-lang="zh">中文</button>
+            <button type="button" data-input-lang="en">English</button>
+          </div>
+
+          <form id="diagnosisForm" class="stack">
+            <label class="field-label" data-i18n="symptoms">症状</label>
+            <div class="chip-grid" id="symptomChips"></div>
+
+            <div class="two-col">
+              <label class="select-field">
+                <span data-i18n="tongue">舌象</span>
+                <select id="tongueSelect">
+                  <option value="red">舌红 / Red tongue</option>
+                  <option value="pale">舌淡 / Pale tongue</option>
+                  <option value="purple">舌紫 / Purple tongue</option>
+                  <option value="greasy">苔腻 / Greasy coating</option>
+                </select>
+              </label>
+              <label class="select-field">
+                <span data-i18n="pulse">脉象</span>
+                <select id="pulseSelect">
+                  <option value="wiry">弦脉 / Wiry</option>
+                  <option value="floating">浮脉 / Floating</option>
+                  <option value="slippery">滑脉 / Slippery</option>
+                  <option value="deep">沉脉 / Deep</option>
+                </select>
+              </label>
+            </div>
+
+            <label class="upload-zone" for="tongueImage">
+              <input id="tongueImage" type="file" accept="image/*" />
+              <span class="upload-icon">+</span>
+              <strong data-i18n="uploadTongue">上传舌象图片</strong>
+              <small data-i18n="uploadHint">本地预览为模拟分析；接入 HF_TOKEN 后可调用 HuggingFace Vision。</small>
+            </label>
+
+            <label class="text-field">
+              <span data-i18n="freeText">自由描述</span>
+              <textarea id="freeText" rows="4" data-i18n-placeholder="freeTextPlaceholder" placeholder="例如：头痛、口苦、睡眠差，最近压力大。"></textarea>
+            </label>
+
+            <button class="analyze-button" type="submit" data-i18n="analyze">生成 AI 推理</button>
+          </form>
+        </section>
+
+        <section class="panel result-panel">
+          <div class="panel-heading compact">
+            <div>
+              <h2 data-i18n="reasoningTitle">Doctor-Level Reasoning Engine</h2>
+              <p data-i18n="reasoningSub">Rule Engine + GraphRAG + Bilingual Explanation</p>
+            </div>
+            <output id="confidenceBadge" class="confidence">0.87</output>
+          </div>
+
+          <div class="result-grid">
+            <article class="result-card">
+              <span data-i18n="tcmDx">中医辨证</span>
+              <strong id="tcmDiagnosis">肝阳上亢</strong>
+              <p id="pathogenesis">头痛、舌红、弦脉提示肝阳偏亢，治以平肝潜阳。</p>
+            </article>
+            <article class="result-card">
+              <span data-i18n="westernDx">西医分析</span>
+              <strong id="westernDiagnosis">Tension-type headache, monitor blood pressure</strong>
+              <p id="riskText">Risk level: moderate. Seek urgent care for chest pain, neurological deficit, or severe sudden headache.</p>
+            </article>
+          </div>
+
+          <div class="formula-box">
+            <div>
+              <span data-i18n="formula">方剂推荐</span>
+              <strong id="formulaName">天麻钩藤饮 / Gastrodia and Uncaria Decoction</strong>
+            </div>
+            <p id="formulaDetail">天麻、钩藤、石决明、牛膝。教学演示建议，不构成处方。</p>
+          </div>
+
+          <div class="evidence-table" aria-label="retrieval evidence">
+            <div><span data-i18n="source">知识来源</span><strong>TCM graph seed</strong></div>
+            <div><span data-i18n="retrieval">检索精度</span><strong id="retrievalScore">0.91</strong></div>
+            <div><span data-i18n="consistency">双语一致性</span><strong id="consistencyScore">0.88</strong></div>
+          </div>
+        </section>
+
+        <aside class="panel graph-panel">
+          <div class="panel-heading compact">
+            <div>
+              <h2>GraphRAG</h2>
+              <p data-i18n="graphSub">医学知识图谱推理路径</p>
+            </div>
+          </div>
+
+          <div class="graph-canvas" id="graphCanvas" aria-label="GraphRAG path"></div>
+
+          <div class="metrics">
+            <div class="metric-row"><span>Rule</span><meter min="0" max="100" value="68"></meter><strong>68%</strong></div>
+            <div class="metric-row"><span>RAG</span><meter min="0" max="100" value="76"></meter><strong>76%</strong></div>
+            <div class="metric-row"><span>GraphRAG</span><meter min="0" max="100" value="84"></meter><strong>84%</strong></div>
+            <div class="metric-row"><span>Bilingual GraphRAG</span><meter min="0" max="100" value="89"></meter><strong>89%</strong></div>
+          </div>
+        </aside>
+      </main>
+
+      <section class="lower-grid">
+        <article class="module-panel">
+          <div>
+            <h3 data-i18n="caseTitle">AI 病例生成</h3>
+            <p id="caseText">症状：头痛、口苦、舌红；答案：肝阳上亢。</p>
+          </div>
+          <button class="ghost-button" id="caseButton" type="button" data-i18n="newCase">生成病例</button>
+        </article>
+        <article class="module-panel">
+          <div>
+            <h3 data-i18n="examTitle">医学考试模式</h3>
+            <p id="examText">Level 3：根据症状 + 舌象匹配证型与方剂。</p>
+          </div>
+          <button class="ghost-button" id="examButton" type="button" data-i18n="startExam">出题</button>
+        </article>
+        <article class="module-panel" id="deploy">
+          <div>
+            <h3 data-i18n="deployTitle">免费资源部署</h3>
+            <p>GitHub + Vercel/Cloudflare Pages + Supabase + HuggingFace Spaces/API。</p>
+          </div>
+          <a class="ghost-button" href="./README.md" data-i18n="readDocs">查看说明</a>
+        </article>
+      </section>
+
+      <section class="clinic-suite" aria-label="clinic management modules">
+        <div class="section-title">
+          <div>
+            <h2 data-i18n="clinicTitle">门诊业务系统</h2>
+            <p data-i18n="clinicSub">挂号、病例、账号、后台和数据库管理，形成完整门诊工作流。</p>
+          </div>
+          <span class="status-dot" id="dbStatus">Local DB ready</span>
+        </div>
+
+        <div class="operations-grid">
+          <section class="panel ops-panel">
+            <div class="panel-heading compact">
+              <div>
+                <h2 data-i18n="registrationTitle">门诊挂号</h2>
+                <p data-i18n="registrationSub">创建患者就诊记录并分配科室、医生和状态。</p>
+              </div>
+            </div>
+            <form id="registrationForm" class="stack">
+              <div class="two-col">
+                <label class="select-field">
+                  <span data-i18n="patientName">患者姓名</span>
+                  <input id="patientName" type="text" placeholder="张明 / Alex Chen" required />
+                </label>
+                <label class="select-field">
+                  <span data-i18n="patientAge">年龄</span>
+                  <input id="patientAge" type="number" min="1" max="120" value="36" required />
+                </label>
+              </div>
+              <div class="two-col">
+                <label class="select-field">
+                  <span data-i18n="department">科室</span>
+                  <select id="department">
+                    <option value="中医内科">中医内科 / TCM Internal</option>
+                    <option value="针灸科">针灸科 / Acupuncture</option>
+                    <option value="西医全科">西医全科 / General Medicine</option>
+                  </select>
+                </label>
+                <label class="select-field">
+                  <span data-i18n="doctor">医生</span>
+                  <select id="doctor">
+                    <option value="李医生">李医生 / Dr. Li</option>
+                    <option value="王医生">王医生 / Dr. Wang</option>
+                    <option value="AI预问诊">AI预问诊 / AI Intake</option>
+                  </select>
+                </label>
+              </div>
+              <label class="text-field">
+                <span data-i18n="chiefComplaint">主诉</span>
+                <textarea id="chiefComplaint" rows="3" placeholder="头痛三天，睡眠差。"></textarea>
+              </label>
+              <button class="analyze-button" type="submit" data-i18n="createVisit">保存挂号</button>
+            </form>
+          </section>
+
+          <section class="panel ops-panel">
+            <div class="panel-heading compact">
+              <div>
+                <h2 data-i18n="recordTitle">病例系统</h2>
+                <p data-i18n="recordSub">把 AI 推理结果归档为教学病例。</p>
+              </div>
+            </div>
+            <div class="record-actions">
+              <button class="ghost-button" id="saveRecordButton" type="button" data-i18n="saveRecord">保存当前病例</button>
+              <button class="ghost-button" id="clearSelectionButton" type="button" data-i18n="clearSelection">清空选择</button>
+            </div>
+            <div class="data-list" id="visitList"></div>
+          </section>
+
+          <section class="panel ops-panel">
+            <div class="panel-heading compact">
+              <div>
+                <h2 data-i18n="accountTitle">账号系统</h2>
+                <p data-i18n="accountSub">模拟医生、学生、管理员三类角色。</p>
+              </div>
+            </div>
+            <div class="role-switch" id="roleSwitch">
+              <button class="active" type="button" data-role="doctor">医生</button>
+              <button type="button" data-role="student">学生</button>
+              <button type="button" data-role="admin">管理员</button>
+            </div>
+            <div class="account-card">
+              <strong id="activeRole">医生工作台</strong>
+              <p id="roleDescription">可查看挂号、保存病例、生成 AI 诊断建议。</p>
+            </div>
+          </section>
+
+          <section class="panel ops-panel">
+            <div class="panel-heading compact">
+              <div>
+                <h2 data-i18n="adminTitle">后台管理员</h2>
+                <p data-i18n="adminSub">查看运营统计和待处理事项。</p>
+              </div>
+            </div>
+            <div class="admin-stats">
+              <div><span data-i18n="visitsToday">今日挂号</span><strong id="visitCount">0</strong></div>
+              <div><span data-i18n="recordsSaved">病例归档</span><strong id="recordCount">0</strong></div>
+              <div><span data-i18n="highRisk">高风险提示</span><strong id="riskCount">0</strong></div>
+            </div>
+            <div class="audit-log" id="auditLog"></div>
+          </section>
+
+          <section class="panel ops-panel database-panel">
+            <div class="panel-heading compact">
+              <div>
+                <h2 data-i18n="databaseTitle">数据库保存与管理</h2>
+                <p data-i18n="databaseSub">当前用浏览器 localStorage 模拟；上线后迁移到 Supabase。</p>
+              </div>
+            </div>
+            <div class="record-actions">
+              <button class="ghost-button" id="exportButton" type="button" data-i18n="exportJson">导出 JSON</button>
+              <button class="ghost-button danger" id="resetButton" type="button" data-i18n="resetDemo">重置演示数据</button>
+            </div>
+            <textarea id="databasePreview" rows="10" readonly></textarea>
+          </section>
+        </div>
+      </section>
+    </div>
+
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>

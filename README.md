@@ -1,0 +1,111 @@
+# Medical AI Research Platform V6
+
+这是一个可运行的双语医学 AI 研究展示系统，覆盖中医辨证、西医分诊、GraphRAG 推理路径、舌诊 AI 接口预留、门诊挂号、病例系统、账号角色、后台管理员、数据库保存与管理、病例生成、考试模式和论文实验指标。
+
+> 重要边界：本项目仅用于医学 AI 研究、教学和产品 Demo，不用于临床诊断或处方。
+
+## 直接运行
+
+```bash
+npm run dev
+```
+
+打开：
+
+```text
+http://localhost:4173
+```
+
+也可以直接打开 `index.html` 预览。
+
+## 已包含功能
+
+- 中英文 UI 切换
+- 症状、舌象、脉象、自由文本输入
+- 本地模拟的中医 + 西医推理结果
+- GraphRAG 知识图谱路径可视化
+- 门诊挂号：患者、年龄、科室、医生、主诉、风险状态
+- 病例系统：把当前 AI 推理归档为病例
+- 账号系统：医生、学生、管理员三类角色模拟
+- 后台管理员：挂号数、病例数、高风险提示、审计日志
+- 数据库管理：浏览器 localStorage 保存、JSON 预览和导出
+- Rule / RAG / GraphRAG / Bilingual GraphRAG 实验指标展示
+- AI 病例生成与考试模式演示
+- Supabase `pgvector`、账号、患者、挂号、病例、审计日志表结构
+- HuggingFace 舌诊接口示例
+- Vercel / Cloudflare Pages / GitHub Pages 静态部署友好
+
+## 免费资源路线
+
+| 模块 | 免费优先方案 | 说明 |
+| --- | --- | --- |
+| 代码仓库 | GitHub | 开源项目、论文附件、Issue 管理 |
+| 静态前端 | Cloudflare Pages 或 Vercel Hobby | 本项目零依赖静态文件，适合直接部署 |
+| 数据库 | Supabase Free | 放账号、患者、挂号、病例、图谱节点；`pgvector` 用于 RAG |
+| 图谱可视化 | 浏览器原生 / Cytoscape.js 可选 | 当前版本用原生 DOM，无需依赖 |
+| 舌诊模型 | HuggingFace Spaces/API | 免费 CPU 适合演示；真实医学模型需自行训练和验证 |
+| LLM | 可选 OpenAI / HuggingFace | 当前本地版不强制依赖模型 Key |
+
+## 接入 Supabase
+
+1. 在 Supabase 创建项目。
+2. 打开 SQL Editor。
+3. 执行 `sql/schema.sql`。
+4. 执行 `sql/seed.sql`。
+5. 后续可把浏览器 `localStorage` 模拟数据替换为 Supabase API 调用。
+
+建议环境变量：
+
+```text
+SUPABASE_URL=...
+SUPABASE_SERVICE_ROLE_KEY=...
+HF_TOKEN=...
+OPENAI_API_KEY=...
+```
+
+## 部署建议
+
+### Cloudflare Pages
+
+- Build command 留空或使用 `npm run check`
+- Output directory 填项目根目录
+- 入口文件为 `index.html`
+
+### Vercel
+
+- Framework preset 选择 Other
+- Build command 可留空或填 `npm run check`
+- Output directory 填 `.`
+
+### GitHub Pages
+
+- 上传整个项目
+- Pages source 选择 main 分支根目录
+
+## 论文方向
+
+建议题目：
+
+```text
+A Multimodal GraphRAG-Based Bilingual Medical AI System for Traditional Chinese Medicine Diagnosis and Educational Simulation
+```
+
+可写贡献点：
+
+- Bilingual medical knowledge alignment
+- GraphRAG + rule-based hybrid reasoning
+- Multimodal tongue diagnosis interface
+- Synthetic medical case generation
+- Explainable TCM + Western medicine education workflow
+
+## 文件说明
+
+- `index.html`：主界面
+- `styles.css`：视觉系统
+- `app.js`：双语、问诊、图谱、病例和考试交互
+- 浏览器本地数据库：`localStorage` key 为 `medical-ai-v6-db`
+- `server.js`：零依赖本地预览服务
+- `sql/schema.sql`：Supabase / pgvector / 门诊业务表结构
+- `sql/seed.sql`：知识图谱和医学知识种子数据
+- `api-examples/huggingface-tongue.js`：HuggingFace 舌诊接口示例
+- `assets/v6-ui-concept.png`：本次生成的 UI 概念图

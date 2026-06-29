@@ -1,0 +1,13 @@
+{
+  "name": "medical-ai-research-platform-v6",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "check": "node --check server.js && node --check app.js"
+  },
+  "description": "Bilingual TCM + Western medicine AI research demo with GraphRAG, tongue diagnosis mock, case generation, and paper-style experiment metrics.",
+  "license": "MIT"
+}

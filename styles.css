@@ -753,6 +753,10 @@ textarea:disabled {
   padding: 18px;
 }
 
+.knowledge-popover[hidden] {
+  display: none;
+}
+
 .knowledge-card {
   width: min(620px, 100%);
   max-height: min(720px, 90vh);

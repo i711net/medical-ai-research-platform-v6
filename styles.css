@@ -436,6 +436,27 @@ textarea {
   border-right: 0;
 }
 
+.ai-model-output {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 14px;
+}
+
+.ai-model-output span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.ai-model-output div {
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
 .graph-panel {
   display: grid;
   gap: 14px;

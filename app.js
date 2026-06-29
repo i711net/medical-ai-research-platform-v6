@@ -39,6 +39,7 @@ const copy = {
     source: "知识来源",
     retrieval: "检索精度",
     consistency: "双语一致性",
+    aiModelOutput: "Hugging Face AI 模型输出",
     graphSub: "医学知识图谱推理路径",
     caseTitle: "AI 病例生成",
     newCase: "生成病例",
@@ -114,6 +115,7 @@ const copy = {
     source: "Source",
     retrieval: "Retrieval precision",
     consistency: "Bilingual consistency",
+    aiModelOutput: "Hugging Face AI model output",
     graphSub: "Medical knowledge graph path",
     caseTitle: "AI Case Generator",
     newCase: "Generate case",
@@ -383,6 +385,45 @@ function analyze() {
   document.querySelector("#consistencyScore").textContent = (confidence + 0.01).toFixed(2);
   renderGraph(profile);
   renderDatabase();
+}
+
+async function requestHuggingFaceDiagnosis() {
+  const output = document.querySelector("#aiOutput");
+  if (!output) return;
+
+  const selectedLabels = symptomOptions
+    .filter((item) => state.selectedSymptoms.has(item.id))
+    .map((item) => item.zh);
+  const tongueText = document.querySelector("#tongueSelect").selectedOptions[0]?.textContent?.split("/")[0]?.trim() || "舌红";
+  const pulseText = document.querySelector("#pulseSelect").selectedOptions[0]?.textContent?.split("/")[0]?.trim() || "弦脉";
+  const freeText = document.querySelector("#freeText").value || "";
+
+  output.textContent = state.lang === "zh"
+    ? "正在调用 Hugging Face 中医模型，请稍候..."
+    : "Calling Hugging Face TCM model, please wait...";
+
+  try {
+    const response = await fetch("/api/ai-diagnose", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        symptoms: selectedLabels,
+        tongue: tongueText,
+        pulse: pulseText,
+        freeText,
+        language: state.lang === "zh" ? "中文" : "English",
+        maxTokens: 1024,
+        temperature: 0.2
+      })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "AI request failed");
+    output.textContent = data.result || "模型没有返回内容。";
+  } catch (error) {
+    output.textContent = state.lang === "zh"
+      ? `Hugging Face 模型暂不可用：${error.message}\n\n已保留上方本地规则 + GraphRAG 演示结果。`
+      : `Hugging Face model unavailable: ${error.message}\n\nLocal rule + GraphRAG demo result remains above.`;
+  }
 }
 
 async function initSupabase() {
@@ -1055,6 +1096,7 @@ document.querySelector("#diagnosisForm").addEventListener("submit", (event) => {
     return;
   }
   analyze();
+  requestHuggingFaceDiagnosis();
 });
 
 document.querySelector("#caseButton").addEventListener("click", () => {

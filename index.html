@@ -24,9 +24,9 @@
             <input id="authPassword" type="password" data-i18n-placeholder="loginPasswordPlaceholder" placeholder="登录密码" autocomplete="current-password" />
             <button class="primary-button" id="loginButton" type="button" data-i18n="login">登录</button>
           </div>
-          <button class="ghost-button admin-entry" id="adminEntryButton" type="button" data-i18n="adminEntry">后台</button>
+          <a class="ghost-button admin-entry" id="adminEntryButton" href="./admin.html" target="_blank" data-i18n="adminEntry">后台</a>
           <button class="ghost-button" id="logoutButton" type="button" data-i18n="logout">退出</button>
-          <a class="ghost-button" href="https://github.com/" target="_blank" rel="noreferrer">GitHub</a>
+          <a class="ghost-button admin-entry" id="githubButton" href="https://github.com/i711net/medical-ai-research-platform-v6" target="_blank" rel="noreferrer">GitHub</a>
         </nav>
       </header>
       <div class="session-strip" id="authStatus">演示模式：医生功能可预览</div>
@@ -277,7 +277,7 @@
             </div>
           </section>
 
-          <section class="panel ops-panel admin-backend" id="adminBackend">
+          <section class="panel ops-panel admin-backend legacy-admin-panel" id="adminBackend">
             <div class="panel-heading compact">
               <div>
                 <h2 data-i18n="adminTitle">后台管理员</h2>
@@ -324,7 +324,7 @@
             </div>
           </section>
 
-          <section class="panel ops-panel database-panel">
+          <section class="panel ops-panel database-panel legacy-admin-panel">
             <div class="panel-heading compact">
               <div>
                 <h2 data-i18n="databaseTitle">数据库保存与管理</h2>

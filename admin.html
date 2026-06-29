@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>后台管理 - Medical AI Research Platform V6</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./supabase-config.js"></script>
+  </head>
+  <body class="admin-page">
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark">管</span>
+          <div>
+            <strong>后台管理</strong>
+            <span>账号、资料、诊断词条、方药知识和数据库管理</span>
+          </div>
+        </div>
+        <nav class="top-actions">
+          <div class="top-login">
+            <input id="authEmail" type="text" placeholder="管理员登录名" autocomplete="username" />
+            <input id="authPassword" type="password" placeholder="管理员密码" autocomplete="current-password" />
+            <button class="primary-button" id="loginButton" type="button">登录</button>
+          </div>
+          <button class="ghost-button" id="logoutButton" type="button">退出</button>
+          <a class="ghost-button" href="./index.html">返回主页</a>
+        </nav>
+      </header>
+
+      <div class="session-strip" id="authStatus">请使用管理员账号登录后台</div>
+
+      <main class="admin-dashboard" id="adminDashboard">
+        <section class="panel ops-panel">
+          <div class="panel-heading compact">
+            <div>
+              <h2>人员账号管理</h2>
+              <p>创建登录名、初始密码、角色和可用天数。普通人员不能自行注册。</p>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="two-col">
+              <label class="select-field">
+                <span>人员姓名</span>
+                <input id="inviteName" type="text" placeholder="王医生" />
+              </label>
+              <label class="select-field">
+                <span>登录名</span>
+                <input id="staffLoginName" type="text" placeholder="wang-doctor" />
+              </label>
+            </div>
+            <div class="two-col">
+              <label class="select-field">
+                <span>角色</span>
+                <select id="inviteRole">
+                  <option value="doctor">医生 / Doctor</option>
+                  <option value="student">学生 / Student</option>
+                  <option value="admin">管理员 / Admin</option>
+                </select>
+              </label>
+              <label class="select-field">
+                <span>初始密码</span>
+                <input id="staffPassword" type="text" placeholder="至少 6 位" />
+              </label>
+            </div>
+            <label class="select-field">
+              <span>可用天数</span>
+              <input id="validDays" type="number" min="1" value="30" />
+            </label>
+            <button class="primary-button" id="createInviteButton" type="button">保存人员账号</button>
+          </div>
+        </section>
+
+        <section class="panel ops-panel">
+          <div class="panel-heading compact">
+            <div>
+              <h2>删除/停用人员</h2>
+              <p>只能停用非管理员账号，并且必须输入删除专用密码。</p>
+            </div>
+          </div>
+          <div class="stack">
+            <input id="deleteLoginName" type="text" placeholder="要停用的登录名" />
+            <input id="deleteStaffPassword" type="password" placeholder="删除专用密码" />
+            <button class="ghost-button danger" id="deleteStaffButton" type="button">停用人员账号</button>
+          </div>
+        </section>
+
+        <section class="panel ops-panel">
+          <div class="panel-heading compact">
+            <div>
+              <h2>后台统计</h2>
+              <p>查看挂号、病例、高风险提示和审计记录。</p>
+            </div>
+          </div>
+          <div class="admin-stats">
+            <div><span>今日挂号</span><strong id="visitCount">0</strong></div>
+            <div><span>病例归档</span><strong id="recordCount">0</strong></div>
+            <div><span>高风险提示</span><strong id="riskCount">0</strong></div>
+          </div>
+          <div class="audit-log" id="auditLog"></div>
+        </section>
+
+        <section class="panel ops-panel">
+          <div class="panel-heading compact">
+            <div>
+              <h2>学习资料管理</h2>
+              <p>先保存链接和文字资料；大文件下一步接 Supabase Storage 上传、压缩和预览。</p>
+            </div>
+          </div>
+          <div class="stack">
+            <input id="resourceTitle" type="text" placeholder="资料标题" />
+            <input id="resourceUrl" type="url" placeholder="外部链接或文件地址" />
+            <textarea id="resourceDescription" rows="3" placeholder="资料说明"></textarea>
+            <button class="ghost-button" id="saveResourceButton" type="button">保存学习资料</button>
+          </div>
+        </section>
+
+        <section class="panel ops-panel">
+          <div class="panel-heading compact">
+            <div>
+              <h2>症状 / 舌象 / 脉象管理</h2>
+              <p>维护 AI 推理可用的结构化词条。</p>
+            </div>
+          </div>
+          <div class="stack">
+            <select id="termCategory">
+              <option value="symptom">症状</option>
+              <option value="tongue">舌象</option>
+              <option value="pulse">脉象</option>
+            </select>
+            <input id="termLabel" type="text" placeholder="词条名称，如：前头痛" />
+            <textarea id="termDescription" rows="3" placeholder="说明、辨证意义、注意事项"></textarea>
+            <button class="ghost-button" id="saveTermButton" type="button">保存词条</button>
+          </div>
+        </section>
+
+        <section class="panel ops-panel">
+          <div class="panel-heading compact">
+            <div>
+              <h2>方剂 / 中药知识库</h2>
+              <p>维护前台点击方剂和药物后显示的说明内容。</p>
+            </div>
+          </div>
+          <div class="stack">
+            <input id="formulaTitle" type="text" placeholder="方剂或中药名" />
+            <textarea id="formulaBody" rows="6" placeholder="出处、组成、剂量、用法、适应范围、加减、现代应用"></textarea>
+            <button class="ghost-button" id="saveFormulaButton" type="button">保存方药说明</button>
+          </div>
+        </section>
+
+        <section class="panel ops-panel database-panel-admin">
+          <div class="panel-heading compact">
+            <div>
+              <h2>数据库保存与管理</h2>
+              <p>导出备份、输入删除密码、执行安全删除。</p>
+            </div>
+          </div>
+          <div class="record-actions">
+            <button class="ghost-button" id="exportButton" type="button">导出 JSON</button>
+            <button class="ghost-button danger" id="resetButton" type="button">重置本地缓存</button>
+          </div>
+          <label class="select-field delete-password">
+            <span>删除专用密码</span>
+            <input id="deletePassword" type="password" placeholder="仅删除时使用" autocomplete="off" />
+          </label>
+          <textarea id="databasePreview" rows="12" readonly></textarea>
+        </section>
+      </main>
+    </div>
+
+    <script src="./admin.js" type="module"></script>
+  </body>
+</html>

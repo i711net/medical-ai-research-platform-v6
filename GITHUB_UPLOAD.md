@@ -6,6 +6,10 @@
 
 ```text
 index.html
+admin.html
+admin.js
+learn.html
+learn.js
 styles.css
 app.js
 server.js
@@ -24,6 +28,10 @@ supabase-config.js
 ```text
 medical-ai-research-platform-v6/
 ├── index.html
+├── admin.html
+├── admin.js
+├── learn.html
+├── learn.js
 ├── styles.css
 ├── app.js
 ├── server.js

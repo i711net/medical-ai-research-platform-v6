@@ -964,6 +964,7 @@ function renderRole() {
   }
   document.body.classList.toggle("admin-mode", state.role === "admin" && !!state.authUser);
   document.querySelector("#adminEntryButton")?.classList.toggle("visible", state.role === "admin" && !!state.authUser);
+  document.querySelector("#githubButton")?.classList.toggle("visible", state.role === "admin" && !!state.authUser);
   applyPermissions();
 }
 
@@ -1072,9 +1073,6 @@ document.querySelector("#saveRecordButton")?.addEventListener("click", saveCurre
 document.querySelector("#signupButton")?.addEventListener("click", signUp);
 document.querySelector("#loginButton")?.addEventListener("click", signIn);
 document.querySelector("#logoutButton")?.addEventListener("click", signOut);
-document.querySelector("#adminEntryButton")?.addEventListener("click", () => {
-  document.querySelector("#adminBackend")?.scrollIntoView({ behavior: "smooth", block: "start" });
-});
 document.querySelector("#createInviteButton")?.addEventListener("click", createInviteCode);
 document.querySelector("#formulaName")?.addEventListener("click", () => {
   openKnowledge(document.querySelector("#formulaName").textContent || "");

@@ -39,7 +39,7 @@ const copy = {
     source: "知识来源",
     retrieval: "检索精度",
     consistency: "双语一致性",
-    aiModelOutput: "Hugging Face AI 模型输出",
+    aiModelOutput: "本地 Ollama / Hugging Face AI 模型输出",
     graphSub: "医学知识图谱推理路径",
     caseTitle: "AI 病例生成",
     newCase: "生成病例",
@@ -115,7 +115,7 @@ const copy = {
     source: "Source",
     retrieval: "Retrieval precision",
     consistency: "Bilingual consistency",
-    aiModelOutput: "Hugging Face AI model output",
+    aiModelOutput: "Local Ollama / Hugging Face AI model output",
     graphSub: "Medical knowledge graph path",
     caseTitle: "AI Case Generator",
     newCase: "Generate case",
@@ -458,11 +458,20 @@ async function requestHuggingFaceDiagnosis() {
   const freeText = document.querySelector("#freeText").value || "";
 
   const sentSummary = state.lang === "zh"
-    ? `已发送到 Hugging Face 中医模型：\n症状：${selectedLabels.join("、") || "未选择"}\n舌象：${tongueText}\n脉象：${pulseText}\n自由描述：${freeText || "无"}\n\n正在等待模型返回...`
-    : `Sent to Hugging Face TCM model:\nSymptoms: ${selectedLabels.join(", ") || "None selected"}\nTongue: ${tongueText}\nPulse: ${pulseText}\nFree text: ${freeText || "None"}\n\nWaiting for model response...`;
+    ? `正在检测本机 Ollama AI 模型：\n症状：${selectedLabels.join("、") || "未选择"}\n舌象：${tongueText}\n脉象：${pulseText}\n自由描述：${freeText || "无"}`
+    : `Checking local Ollama AI model:\nSymptoms: ${selectedLabels.join(", ") || "None selected"}\nTongue: ${tongueText}\nPulse: ${pulseText}\nFree text: ${freeText || "None"}`;
   output.textContent = sentSummary;
 
+  const localResult = await requestLocalOllamaDiagnosis({ selectedLabels, tongueText, pulseText, freeText });
+  if (localResult.handled) {
+    output.textContent = localResult.message;
+    return;
+  }
+
   try {
+    output.textContent = state.lang === "zh"
+      ? `${sentSummary}\n\n未检测到可用本机 Ollama，正在尝试 Hugging Face 备用模型...`
+      : `${sentSummary}\n\nNo usable local Ollama detected. Trying Hugging Face fallback...`;
     const response = await fetch("/api/ai-diagnose", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -492,6 +501,115 @@ async function requestHuggingFaceDiagnosis() {
       ? `Hugging Face 模型暂不可用：${error.message}\n\n已保留上方本地规则 + GraphRAG 演示结果。`
       : `Hugging Face model unavailable: ${error.message}\n\nLocal rule + GraphRAG demo result remains above.`;
   }
+}
+
+async function requestLocalOllamaDiagnosis({ selectedLabels, tongueText, pulseText, freeText }) {
+  const baseUrl = "http://127.0.0.1:11434";
+  const timeoutMs = 30000;
+  const withTimeout = async (url, options = {}, timeout = timeoutMs) => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+
+  try {
+    const tagsResponse = await withTimeout(`${baseUrl}/api/tags`, {}, 2500);
+    if (!tagsResponse.ok) throw new Error(`Ollama tags HTTP ${tagsResponse.status}`);
+    const tags = await tagsResponse.json();
+    const models = Array.isArray(tags.models) ? tags.models : [];
+    if (!models.length) {
+      return {
+        handled: true,
+        message: buildLocalAiGuide("已检测到 Ollama，但还没有安装任何模型。")
+      };
+    }
+
+    const preferred = models.find((item) => /tcm|deepseek|qwen|yi|llama|gemma|mistral/i.test(item.name)) || models[0];
+    const modelName = preferred.name;
+    const prompt = buildMedicalPrompt(selectedLabels, tongueText, pulseText, freeText);
+    const chatResponse = await withTimeout(`${baseUrl}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: modelName,
+        stream: false,
+        options: {
+          temperature: 0.2,
+          num_predict: 384,
+          num_ctx: 2048
+        },
+        messages: [
+          {
+            role: "system",
+            content: "你是中医+西医医学AI研究与教学助手。只用于教育和科研演示，不构成诊断或处方。必须提示危险信号需要线下就医。"
+          },
+          { role: "user", content: prompt }
+        ]
+      })
+    }, timeoutMs);
+
+    const rawText = await chatResponse.text();
+    let data;
+    try {
+      data = rawText ? JSON.parse(rawText) : {};
+    } catch {
+      throw new Error(rawText.slice(0, 300) || "Ollama returned a non-JSON response");
+    }
+    if (!chatResponse.ok) throw new Error(data.error || `Ollama chat HTTP ${chatResponse.status}`);
+
+    const content = data.message?.content || data.response || "";
+    return {
+      handled: true,
+      message: state.lang === "zh"
+        ? `本机 Ollama 模型返回（${modelName}）：\n\n${content || "模型没有返回内容。"}`
+        : `Local Ollama model response (${modelName}):\n\n${content || "The model returned no content."}`
+    };
+  } catch (error) {
+    const message = String(error.message || error);
+    const likelyCors = message.includes("Failed to fetch") || message.includes("NetworkError");
+    return {
+      handled: true,
+      message: buildLocalAiGuide(likelyCors
+        ? "未检测到可用的本机 Ollama，或浏览器被 CORS 拦截。"
+        : `本机 Ollama 暂不可用：${message}`)
+    };
+  }
+}
+
+function buildMedicalPrompt(selectedLabels, tongueText, pulseText, freeText) {
+  return `请根据以下资料做中医+西医教学推理：
+症状：${selectedLabels.join("、") || "未选择"}
+舌象：${tongueText}
+脉象：${pulseText}
+自由描述：${freeText || "无"}
+
+请按结构输出：
+1. 安全风险分级：低/中/高，列出需立即就医的危险信号
+2. 中医辨证：可能证型、证据、病机，不要和已选症状矛盾
+3. 西医鉴别：需要排除的常见方向
+4. 方剂思路：推荐方剂、适用范围、禁忌提醒，不给绝对处方
+5. 加减思路：根据症状说明加减方向
+6. 预防调护：生活方式、复诊和检查建议
+7. 不确定性：还需要补问什么`;
+}
+
+function buildLocalAiGuide(reason) {
+  if (state.lang !== "zh") {
+    return `${reason}\n\nLocal AI setup:\n1. Install Ollama on this computer.\n2. Run: ollama pull qwen2.5:7b-instruct\n3. If CORS blocks this site, allow this domain in OLLAMA_ORIGINS and restart Ollama.\n\nThe local rule + GraphRAG result remains available above.`;
+  }
+  return `${reason}
+
+本地 AI 使用方法：
+1. 在使用者电脑安装 Ollama。
+2. 先拉一个模型，例如：ollama pull qwen2.5:7b-instruct
+3. 如果要使用你下载的 GGUF，可用 Ollama 创建本地模型，例如 Modelfile 写 FROM 你的 .gguf 文件路径。
+4. 如果浏览器提示跨域拦截，需要给 Ollama 设置 OLLAMA_ORIGINS，允许本网站域名。
+
+上方本地规则 + GraphRAG 结果仍然可用。`;
 }
 
 async function initSupabase() {

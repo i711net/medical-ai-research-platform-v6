@@ -30,6 +30,18 @@
         </nav>
       </header>
       <div class="session-strip" id="authStatus">演示模式：医生功能可预览</div>
+      <section class="local-ai-connect" aria-label="local AI connection">
+        <div>
+          <strong id="localAiTitle">本地 AI 模型：正在检测...</strong>
+          <p id="localAiStatus">请连接本机 Ollama 模型；连接成功后这里会显示已连接。</p>
+        </div>
+        <div class="local-ai-actions">
+          <button class="ghost-button" id="checkLocalAiButton" type="button">重新检测</button>
+          <label class="ghost-button file-action" for="localModelFile">检查 GGUF 文件</label>
+          <input id="localModelFile" type="file" accept=".gguf" />
+          <a class="ghost-button" href="https://ollama.com/download" target="_blank" rel="noreferrer">下载 Ollama</a>
+        </div>
+      </section>
 
       <main class="workspace">
         <section class="panel intake-panel">

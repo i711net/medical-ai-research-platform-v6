@@ -612,6 +612,74 @@ function buildLocalAiGuide(reason) {
 上方本地规则 + GraphRAG 结果仍然可用。`;
 }
 
+async function detectLocalAi() {
+  const panel = document.querySelector(".local-ai-connect");
+  const title = document.querySelector("#localAiTitle");
+  const status = document.querySelector("#localAiStatus");
+  if (!panel || !title || !status) return;
+
+  panel.classList.remove("ready", "warning", "error");
+  title.textContent = state.lang === "zh" ? "本地 AI 模型：正在检测..." : "Local AI model: checking...";
+  status.textContent = state.lang === "zh"
+    ? "请连接本机 Ollama 模型；连接成功后这里会显示已连接。"
+    : "Connect a local Ollama model; this area will show connected when ready.";
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 2500);
+  try {
+    const response = await fetch("http://127.0.0.1:11434/api/tags", { signal: controller.signal });
+    clearTimeout(timer);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    const models = Array.isArray(data.models) ? data.models : [];
+    if (!models.length) {
+      panel.classList.add("warning");
+      title.textContent = state.lang === "zh" ? "本地 AI 模型：已发现 Ollama，但未安装模型" : "Local AI model: Ollama found, no models installed";
+      status.textContent = state.lang === "zh"
+        ? "请先在本机 Ollama 里添加一个模型。添加完成后点“重新检测”，网站会自动接入。"
+        : "Add a model to local Ollama first. Then click Check again and the site will connect automatically.";
+      return;
+    }
+
+    const names = models.map((item) => item.name).join("、");
+    panel.classList.add("ready");
+    title.textContent = state.lang === "zh" ? "本地 AI 模型：已连接" : "Local AI model: connected";
+    status.textContent = state.lang === "zh"
+      ? `已检测到 Ollama 模型：${names}。生成 AI 推理时会优先使用本机模型。`
+      : `Detected Ollama models: ${names}. AI reasoning will use local models first.`;
+  } catch (error) {
+    clearTimeout(timer);
+    panel.classList.add("error");
+    title.textContent = state.lang === "zh" ? "本地 AI 模型：未连接" : "Local AI model: not connected";
+    status.textContent = state.lang === "zh"
+      ? "请在本机安装并启动 Ollama，再添加模型。准备好后点“重新检测”，本网站会自动显示已连接。"
+      : "Install and start Ollama locally, then add a model. Click Check again when ready.";
+  }
+}
+
+function inspectLocalModelFile(event) {
+  const file = event.target.files?.[0];
+  const panel = document.querySelector(".local-ai-connect");
+  const title = document.querySelector("#localAiTitle");
+  const status = document.querySelector("#localAiStatus");
+  if (!file || !panel || !title || !status) return;
+
+  const sizeGb = file.size / 1024 / 1024 / 1024;
+  panel.classList.remove("ready", "warning", "error");
+  if (!file.name.toLowerCase().endsWith(".gguf")) {
+    panel.classList.add("error");
+    title.textContent = "本地 AI 模型：文件格式不对";
+    status.textContent = `已选择：${file.name}。请选择 .gguf 模型文件。文件检查只用于提示，真正运行需要本机 Ollama 模型。`;
+    return;
+  }
+
+  panel.classList.add(sizeGb >= 0.5 ? "warning" : "error");
+  title.textContent = "本地 AI 模型：已检查 GGUF 文件";
+  status.textContent = sizeGb >= 0.5
+    ? `已选择：${file.name}，约 ${sizeGb.toFixed(2)} GB。请把这个文件添加到本机 Ollama；添加完成后点“重新检测”，首页会显示已连接。`
+    : `已选择：${file.name}，只有 ${Math.max(1, Math.round(file.size / 1024))} KB，可能不是完整模型文件，而是下载指针或损坏文件。`;
+}
+
 async function initSupabase() {
   const config = window.SUPABASE_CONFIG || {};
   const isConfigured = config.url?.startsWith("https://") && config.anonKey?.length > 30;
@@ -1301,6 +1369,8 @@ document.querySelector("#saveRecordButton")?.addEventListener("click", saveCurre
 document.querySelector("#signupButton")?.addEventListener("click", signUp);
 document.querySelector("#loginButton")?.addEventListener("click", signIn);
 document.querySelector("#logoutButton")?.addEventListener("click", signOut);
+document.querySelector("#checkLocalAiButton")?.addEventListener("click", detectLocalAi);
+document.querySelector("#localModelFile")?.addEventListener("change", inspectLocalModelFile);
 document.querySelector("#createInviteButton")?.addEventListener("click", createInviteCode);
 document.querySelector("#formulaName")?.addEventListener("click", () => {
   openKnowledge(document.querySelector("#formulaName").textContent || "");
@@ -1348,3 +1418,4 @@ await initSupabase();
 await loadDatabase();
 applyLanguage();
 analyze();
+detectLocalAi();

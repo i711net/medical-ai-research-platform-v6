@@ -107,6 +107,56 @@ textarea {
   font-size: 13px;
 }
 
+.local-ai-connect {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  background: #eefaf7;
+  border: 1px solid #b8e4dc;
+  border-radius: 8px;
+}
+
+.local-ai-connect strong {
+  display: block;
+  font-size: 14px;
+}
+
+.local-ai-connect p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.local-ai-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.local-ai-actions input[type="file"] {
+  display: none;
+}
+
+.local-ai-connect.ready {
+  background: #ecfdf5;
+  border-color: #86efac;
+}
+
+.local-ai-connect.warning {
+  background: #fffbeb;
+  border-color: #f5d48a;
+}
+
+.local-ai-connect.error {
+  background: #fff7ed;
+  border-color: #fdba74;
+}
+
 .top-actions .admin-entry {
   display: none !important;
 }

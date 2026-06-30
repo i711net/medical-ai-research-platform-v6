@@ -165,14 +165,15 @@ textarea {
   border-radius: 8px;
 }
 
-.local-ai-guide strong {
+.local-ai-guide summary {
   display: block;
   font-size: 14px;
-  margin-bottom: 8px;
+  font-weight: 800;
+  cursor: pointer;
 }
 
 .local-ai-guide ol {
-  margin: 0;
+  margin: 8px 0 0;
   padding-left: 20px;
   color: var(--text);
   font-size: 13px;
@@ -252,9 +253,31 @@ textarea {
 
 .workspace {
   display: grid;
-  grid-template-columns: minmax(300px, 0.95fr) minmax(360px, 1.1fr) minmax(300px, 0.9fr);
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.85fr);
   gap: 14px;
-  align-items: stretch;
+  align-items: start;
+  grid-template-areas:
+    "intake intake"
+    "result ai"
+    "graph graph";
+}
+
+.intake-panel {
+  grid-area: intake;
+}
+
+.result-panel {
+  grid-area: result;
+}
+
+.ai-output-panel {
+  grid-area: ai;
+  display: grid;
+  gap: 14px;
+}
+
+.graph-panel {
+  grid-area: graph;
 }
 
 .panel {
@@ -346,7 +369,11 @@ textarea {
 
 .chip-grid {
   display: grid;
-  gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  max-height: 280px;
+  overflow: auto;
+  padding-right: 4px;
 }
 
 .symptom-group {
@@ -363,17 +390,19 @@ textarea {
 
 .symptom-group-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
 }
 
 .chip {
-  min-height: 38px;
+  min-height: 32px;
   border: 1px solid var(--line);
   border-radius: 7px;
   background: white;
   cursor: pointer;
   color: var(--text);
+  font-size: 13px;
+  padding: 4px 8px;
 }
 
 .chip.active {
@@ -628,7 +657,7 @@ meter {
 
 .lower-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: 1fr;
   gap: 14px;
   margin-top: 14px;
 }
@@ -950,6 +979,14 @@ textarea:disabled {
   .lower-grid,
   .operations-grid {
     grid-template-columns: 1fr;
+  }
+
+  .workspace {
+    grid-template-areas:
+      "intake"
+      "result"
+      "ai"
+      "graph";
   }
 
   .database-panel {

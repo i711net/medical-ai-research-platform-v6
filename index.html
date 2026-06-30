@@ -43,8 +43,8 @@
           <button class="ghost-button" id="localAiHelpButton" type="button">连接说明</button>
         </div>
       </section>
-      <section class="local-ai-guide" aria-label="local AI setup guide">
-        <strong>本地模型连接顺序</strong>
+      <details class="local-ai-guide" aria-label="local AI setup guide">
+        <summary>本地模型连接顺序</summary>
         <ol>
           <li>先启动 Ollama：打开电脑里的 Ollama 程序。</li>
           <li>再添加模型：在 Ollama 里安装模型，或把 GGUF 文件注册成本地模型。</li>
@@ -52,7 +52,7 @@
           <li>测试成功后，再填写症状并点击“生成 AI 推理”。</li>
         </ol>
         <p>如果已经安装 Ollama 但网页检测不到，请确认 Ollama 正在运行，并允许本网站访问本机 Ollama 服务。</p>
-      </section>
+      </details>
 
       <main class="workspace">
         <section class="panel intake-panel">
@@ -178,9 +178,16 @@
             <div><span data-i18n="retrieval">检索精度</span><strong id="retrievalScore">0.91</strong></div>
             <div><span data-i18n="consistency">双语一致性</span><strong id="consistencyScore">0.88</strong></div>
           </div>
+        </section>
 
+        <section class="panel ai-output-panel">
+          <div class="panel-heading compact">
+            <div>
+              <h2 data-i18n="aiModelOutput">本地 / Hugging Face AI 模型输出</h2>
+              <p>本机 Ollama 优先，Hugging Face 备用。</p>
+            </div>
+          </div>
           <div class="ai-model-output">
-            <span data-i18n="aiModelOutput">本地 / Hugging Face AI 模型输出</span>
             <div id="aiOutput">点击“生成 AI 推理”后，会优先显示本地规则结果，并检测本机 Ollama 模型。</div>
           </div>
         </section>
@@ -205,21 +212,7 @@
       </main>
 
       <section class="lower-grid">
-        <article class="module-panel">
-          <div>
-            <h3 data-i18n="caseTitle">AI 病例生成</h3>
-            <p id="caseText">症状：头痛、口苦、舌红；答案：肝阳上亢。</p>
-          </div>
-          <button class="ghost-button" id="caseButton" type="button" data-i18n="newCase">生成病例</button>
-        </article>
-        <article class="module-panel">
-          <div>
-            <h3 data-i18n="examTitle">医学考试模式</h3>
-            <p id="examText">Level 3：根据症状 + 舌象匹配证型与方剂。</p>
-          </div>
-          <button class="ghost-button" id="examButton" type="button" data-i18n="startExam">出题</button>
-        </article>
-        <article class="module-panel">
+        <article class="module-panel learning-entry">
           <div>
             <h3 data-i18n="learningTitle">中医西医学习区</h3>
             <p data-i18n="learningSub">医学图书、视频、音频、链接资料目录。</p>

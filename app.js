@@ -1655,12 +1655,12 @@ document.querySelector("#diagnosisForm").addEventListener("submit", (event) => {
   requestHuggingFaceDiagnosis();
 });
 
-document.querySelector("#caseButton").addEventListener("click", () => {
+document.querySelector("#caseButton")?.addEventListener("click", () => {
   const item = cases[Math.floor(Math.random() * cases.length)];
   document.querySelector("#caseText").textContent = item[state.lang];
 });
 
-document.querySelector("#examButton").addEventListener("click", () => {
+document.querySelector("#examButton")?.addEventListener("click", () => {
   document.querySelector("#examText").textContent = state.lang === "zh"
     ? "题目：头痛 + 舌红 + 弦脉，最可能的证型？选项：肝阳上亢 / 气虚证 / 风寒表证。"
     : "Quiz: Headache + red tongue + wiry pulse. Most likely pattern? Options: Liver Yang / Qi deficiency / wind-cold exterior.";

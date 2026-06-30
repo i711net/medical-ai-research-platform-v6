@@ -1,4 +1,4 @@
-create extension if not exists pgcrypto;
+create extension if not exists pgcrypto with schema extensions;
 
 create table if not exists app_users (
   id uuid primary key default gen_random_uuid(),
@@ -85,11 +85,11 @@ declare
   u app_users%rowtype;
 begin
   select * into u
-  from app_users
-  where login_name = p_login_name
-    and is_active = true;
+  from app_users au
+  where au.login_name = p_login_name
+    and au.is_active = true;
 
-  if not found or crypt(p_password, u.password_hash) <> u.password_hash then
+  if not found or extensions.crypt(p_password, u.password_hash) <> u.password_hash then
     raise exception '用户名或密码错误';
   end if;
 
@@ -130,19 +130,19 @@ declare
   new_id uuid;
 begin
   select * into admin_user
-  from app_users
-  where login_name = p_admin_login_name
-    and is_active = true
-    and role = 'admin';
+  from app_users au
+  where au.login_name = p_admin_login_name
+    and au.is_active = true
+    and au.role = 'admin';
 
-  if not found or crypt(p_admin_password, admin_user.password_hash) <> admin_user.password_hash then
+  if not found or extensions.crypt(p_admin_password, admin_user.password_hash) <> admin_user.password_hash then
     raise exception '管理员校验失败';
   end if;
 
   insert into app_users (login_name, password_hash, display_name, role, expires_at)
   values (
     p_login_name,
-    crypt(p_password, gen_salt('bf')),
+    extensions.crypt(p_password, extensions.gen_salt('bf')),
     p_display_name,
     p_role,
     case when p_valid_days is null then null else now() + make_interval(days => p_valid_days) end
@@ -178,12 +178,12 @@ declare
   stored_hash text;
 begin
   select * into admin_user
-  from app_users
-  where login_name = p_admin_login_name
-    and is_active = true
-    and role = 'admin';
+  from app_users au
+  where au.login_name = p_admin_login_name
+    and au.is_active = true
+    and au.role = 'admin';
 
-  if not found or crypt(p_admin_password, admin_user.password_hash) <> admin_user.password_hash then
+  if not found or extensions.crypt(p_admin_password, admin_user.password_hash) <> admin_user.password_hash then
     raise exception '管理员校验失败';
   end if;
 
@@ -191,14 +191,14 @@ begin
   from admin_delete_passwords
   where id = 1;
 
-  if stored_hash is null or crypt(p_delete_password, stored_hash) <> stored_hash then
+  if stored_hash is null or extensions.crypt(p_delete_password, stored_hash) <> stored_hash then
     raise exception '删除专用密码错误';
   end if;
 
   update app_users
   set is_active = false
-  where login_name = p_login_name
-    and role <> 'admin';
+  where app_users.login_name = p_login_name
+    and app_users.role <> 'admin';
 
   insert into admin_audit_logs (action, payload)
   values ('admin_delete_app_user', jsonb_build_object('login_name', p_login_name));
@@ -213,7 +213,7 @@ grant execute on function admin_delete_app_user(text, text, text, text) to anon,
 
 -- 初始化管理员账号：执行前把 admin 和 CHANGE_ADMIN_PASSWORD 改成你自己的。
 -- insert into app_users (login_name, password_hash, display_name, role, expires_at)
--- values ('admin', crypt('CHANGE_ADMIN_PASSWORD', gen_salt('bf')), '系统管理员', 'admin', null)
+-- values ('admin', extensions.crypt('CHANGE_ADMIN_PASSWORD', extensions.gen_salt('bf')), '系统管理员', 'admin', null)
 -- on conflict (login_name) do update
 -- set password_hash = excluded.password_hash,
 --     display_name = excluded.display_name,

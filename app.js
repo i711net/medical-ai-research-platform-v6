@@ -173,33 +173,81 @@ const copy = {
   }
 };
 
-const symptomOptions = [
-  { id: "headache", zh: "头痛", en: "Headache" },
-  { id: "frontalHeadache", zh: "前头痛", en: "Frontal headache" },
-  { id: "occipitalHeadache", zh: "后头痛", en: "Occipital headache" },
-  { id: "temporalHeadache", zh: "两侧头痛", en: "Temporal headache" },
-  { id: "vertexHeadache", zh: "巅顶痛", en: "Vertex headache" },
-  { id: "bitter", zh: "口苦", en: "Bitter taste" },
-  { id: "fever", zh: "发热", en: "Fever" },
-  { id: "chills", zh: "恶寒", en: "Chills" },
-  { id: "alternatingChillsFever", zh: "寒热往来", en: "Alternating chills and fever" },
-  { id: "cough", zh: "咳嗽", en: "Cough" },
-  { id: "phlegm", zh: "咳痰", en: "Phlegm" },
-  { id: "wheezing", zh: "喘促", en: "Wheezing" },
-  { id: "chestPain", zh: "胸痛", en: "Chest pain" },
-  { id: "chestTightness", zh: "胸闷", en: "Chest tightness" },
-  { id: "palpitation", zh: "心悸", en: "Palpitation" },
-  { id: "fatigue", zh: "乏力", en: "Fatigue" },
-  { id: "insomnia", zh: "失眠", en: "Insomnia" },
-  { id: "dreaminess", zh: "多梦", en: "Vivid dreams" },
-  { id: "dizziness", zh: "眩晕", en: "Dizziness" },
-  { id: "nausea", zh: "恶心", en: "Nausea" },
-  { id: "poorAppetite", zh: "纳差", en: "Poor appetite" },
-  { id: "looseStool", zh: "便溏", en: "Loose stool" },
-  { id: "constipation", zh: "便秘", en: "Constipation" },
-  { id: "edema", zh: "水肿", en: "Edema" },
-  { id: "nightSweat", zh: "盗汗", en: "Night sweating" }
+const symptomGroups = [
+  {
+    id: "headFace",
+    zh: "头面五官",
+    en: "Head, face, senses",
+    items: [
+      ["headache", "头痛", "Headache"], ["frontalHeadache", "前头痛", "Frontal headache"], ["occipitalHeadache", "后头痛", "Occipital headache"],
+      ["temporalHeadache", "两侧头痛", "Temporal headache"], ["vertexHeadache", "巅顶痛", "Vertex headache"], ["dizziness", "眩晕", "Dizziness"],
+      ["blurredVision", "目昏", "Blurred vision"], ["redEyes", "目赤", "Red eyes"], ["tinnitus", "耳鸣", "Tinnitus"], ["dryMouth", "口干", "Dry mouth"],
+      ["bitter", "口苦", "Bitter taste"], ["throatPain", "咽痛", "Sore throat"]
+    ]
+  },
+  {
+    id: "coldHeat",
+    zh: "寒热汗出",
+    en: "Cold, heat, sweating",
+    items: [
+      ["fever", "发热", "Fever"], ["chills", "恶寒", "Chills"], ["aversionWind", "恶风", "Aversion to wind"], ["alternatingChillsFever", "寒热往来", "Alternating chills and fever"],
+      ["tidalFever", "潮热", "Tidal fever"], ["fiveCenterHeat", "五心烦热", "Five-center heat"], ["spontaneousSweat", "自汗", "Spontaneous sweating"],
+      ["nightSweat", "盗汗", "Night sweating"], ["noSweat", "无汗", "No sweating"], ["profuseSweat", "大汗", "Profuse sweating"]
+    ]
+  },
+  {
+    id: "lungChest",
+    zh: "肺系胸胁",
+    en: "Lung, chest, rib-side",
+    items: [
+      ["cough", "咳嗽", "Cough"], ["phlegm", "咳痰", "Phlegm"], ["yellowPhlegm", "黄痰", "Yellow phlegm"], ["whitePhlegm", "白痰", "White phlegm"],
+      ["wheezing", "喘促", "Wheezing"], ["shortBreath", "气短", "Shortness of breath"], ["chestPain", "胸痛", "Chest pain"], ["chestTightness", "胸闷", "Chest tightness"],
+      ["ribPain", "胁痛", "Rib-side pain"], ["sighing", "善太息", "Frequent sighing"]
+    ]
+  },
+  {
+    id: "spleenStomach",
+    zh: "脾胃二便",
+    en: "Digestion, stool, urine",
+    items: [
+      ["poorAppetite", "纳差", "Poor appetite"], ["nausea", "恶心", "Nausea"], ["vomiting", "呕吐", "Vomiting"], ["acidRegurgitation", "反酸", "Acid regurgitation"],
+      ["abdominalDistension", "腹胀", "Abdominal distension"], ["abdominalPain", "腹痛", "Abdominal pain"], ["looseStool", "便溏", "Loose stool"], ["diarrhea", "泄泻", "Diarrhea"],
+      ["constipation", "便秘", "Constipation"], ["dryStool", "大便干", "Dry stool"], ["frequentUrination", "尿频", "Frequent urination"], ["shortYellowUrine", "小便短黄", "Scanty yellow urine"],
+      ["edema", "水肿", "Edema"]
+    ]
+  },
+  {
+    id: "spiritSleep",
+    zh: "心神睡眠",
+    en: "Mind, sleep",
+    items: [
+      ["palpitation", "心悸", "Palpitation"], ["insomnia", "失眠", "Insomnia"], ["difficultySleeping", "入睡困难", "Difficulty falling asleep"], ["earlyWaking", "早醒", "Early waking"],
+      ["dreaminess", "多梦", "Vivid dreams"], ["forgetfulness", "健忘", "Forgetfulness"], ["irritability", "烦躁", "Irritability"], ["anxiety", "焦虑", "Anxiety"],
+      ["fatigue", "乏力", "Fatigue"], ["somnolence", "嗜睡", "Somnolence"]
+    ]
+  },
+  {
+    id: "painLimbs",
+    zh: "经络肢体",
+    en: "Channels, limbs, pain",
+    items: [
+      ["neckStiffness", "项强", "Neck stiffness"], ["shoulderPain", "肩痛", "Shoulder pain"], ["lowBackPain", "腰痛", "Low back pain"], ["kneeWeakness", "膝软", "Weak knees"],
+      ["limbNumbness", "肢麻", "Limb numbness"], ["jointPain", "关节痛", "Joint pain"], ["fixedPain", "刺痛固定", "Fixed stabbing pain"], ["coldLimbs", "四肢冷", "Cold limbs"],
+      ["hotPalmsSoles", "手足心热", "Hot palms and soles"]
+    ]
+  },
+  {
+    id: "women",
+    zh: "妇科相关",
+    en: "Gynecology",
+    items: [
+      ["irregularMenses", "月经不调", "Irregular menstruation"], ["dysmenorrhea", "痛经", "Dysmenorrhea"], ["amenorrhea", "闭经", "Amenorrhea"], ["heavyMenses", "月经过多", "Heavy menses"],
+      ["scantyMenses", "月经过少", "Scanty menses"], ["leukorrhea", "带下", "Leukorrhea"], ["postpartumFatigue", "产后乏力", "Postpartum fatigue"]
+    ]
+  }
 ];
+
+const symptomOptions = symptomGroups.flatMap((group) => group.items.map(([id, zh, en]) => ({ id, zh, en, group: group.id })));
 
 const cases = [
   {
@@ -256,7 +304,148 @@ const formulaKnowledge = {
     indications: "外感风邪头痛，或偏正头痛、恶寒发热等。",
     modifications: "风寒重加辛温解表；风热明显需调整清疏；久痛夹瘀可酌加活血。",
     modern: "需注意传统方中个别药物的现代安全规范，必要时由医师选择替代方案。"
+  },
+  "桂枝汤": {
+    source: "《伤寒论》",
+    composition: "桂枝、芍药、甘草、生姜、大枣",
+    usage: "教学示例。传统为水煎温服，啜热粥助汗；剂量和服法必须由医师辨证。",
+    indications: "太阳中风表虚证，发热恶风、自汗、头痛、脉浮缓。",
+    modifications: "汗出多需辨虚实；兼喘可参考桂枝加厚朴杏子汤；误汗伤阳、里热炽盛者不可套用。",
+    modern: "常用于外感表虚、植物神经功能紊乱等教学讨论，不替代感染性疾病评估。"
+  },
+  "麻黄汤": {
+    source: "《伤寒论》",
+    composition: "麻黄、桂枝、杏仁、甘草",
+    usage: "教学示例。发汗力较强，现代应用必须评估血压、心率、失眠、用药相互作用。",
+    indications: "太阳伤寒表实证，恶寒发热、无汗、身痛、喘、脉浮紧。",
+    modifications: "咳喘重可重视宣肺平喘；体虚、自汗、高血压、心悸者慎用。",
+    modern: "麻黄含拟交感成分，相关药品监管和禁忌需严格遵守。"
+  },
+  "银翘散": {
+    source: "《温病条辨》",
+    composition: "金银花、连翘、薄荷、牛蒡子、荆芥、淡豆豉、淡竹叶、桔梗、甘草、芦根",
+    usage: "教学示例。辛凉透表，水煎服或现代制剂遵医嘱。",
+    indications: "风热表证，发热、微恶风寒、咽痛、口渴、舌尖红。",
+    modifications: "咽痛重加清利咽喉；咳嗽重加宣肺止咳；高热持续需排查感染。",
+    modern: "常用于上呼吸道感染早期风热证型教学讨论。"
+  },
+  "小柴胡汤": {
+    source: "《伤寒论》",
+    composition: "柴胡、黄芩、人参、半夏、甘草、生姜、大枣",
+    usage: "教学示例。和解少阳，需辨半表半里，不可作为万能抗炎方。",
+    indications: "少阳证，寒热往来、胸胁苦满、口苦、咽干、目眩、默默不欲饮食。",
+    modifications: "热重可清少阳；痰湿重需化痰；肝胆疾病需结合现代检查。",
+    modern: "涉及肝胆、消化、免疫相关研究讨论，需注意药物性肝损伤风险评估。"
+  },
+  "逍遥散": {
+    source: "《太平惠民和剂局方》",
+    composition: "柴胡、当归、白芍、白术、茯苓、甘草、薄荷、生姜",
+    usage: "教学示例。疏肝健脾养血，实际剂量遵医嘱。",
+    indications: "肝郁血虚脾弱，胁痛、情志抑郁、月经不调、纳差、疲倦。",
+    modifications: "热象明显可化裁丹栀逍遥散；血虚重加养血；痰湿重合化痰利湿。",
+    modern: "常用于焦虑、经前期不适、功能性消化问题等证候研究。"
+  },
+  "半夏泻心汤": {
+    source: "《伤寒论》",
+    composition: "半夏、黄芩、干姜、人参、黄连、大枣、甘草",
+    usage: "教学示例。寒热错杂、辛开苦降，需辨痞满呕利。",
+    indications: "心下痞，呕吐、肠鸣、下利，寒热错杂。",
+    modifications: "热重可偏清；寒重可温中；明显器质性胃肠病需现代诊疗。",
+    modern: "常用于功能性消化不良、胃食管反流、肠易激等教学讨论。"
+  },
+  "二陈汤": {
+    source: "《太平惠民和剂局方》",
+    composition: "半夏、陈皮、茯苓、甘草、生姜、乌梅",
+    usage: "教学示例。燥湿化痰、理气和中。",
+    indications: "湿痰证，咳痰多、胸脘痞闷、恶心、眩悸、苔白腻。",
+    modifications: "热痰可配清热化痰；寒痰可温化；痰湿夹食可消食导滞。",
+    modern: "常作为痰湿体质、咳嗽痰多、胃肠痰湿的基础方义。"
+  },
+  "六君子汤": {
+    source: "《医学正传》",
+    composition: "人参、白术、茯苓、甘草、陈皮、半夏",
+    usage: "教学示例。益气健脾、燥湿化痰。",
+    indications: "脾胃气虚兼痰湿，食少便溏、胸脘痞闷、咳痰、舌淡苔腻。",
+    modifications: "气虚明显加黄芪；食积加消导；痰湿重加化痰药。",
+    modern: "常用于消化功能减退、慢性疲劳、痰湿相关证候研究。"
+  },
+  "补中益气汤": {
+    source: "《脾胃论》",
+    composition: "黄芪、人参、白术、甘草、当归、陈皮、升麻、柴胡",
+    usage: "教学示例。补中益气、升阳举陷。",
+    indications: "中气不足、气虚下陷，乏力、气短、久泻、脱肛、内脏下垂相关证候。",
+    modifications: "气虚重用补气；阴虚火旺、实热内盛需慎辨。",
+    modern: "用于气虚疲劳、胃肠功能低下等研究讨论，需排除严重器质性疾病。"
+  },
+  "六味地黄丸": {
+    source: "《小儿药证直诀》",
+    composition: "熟地黄、山茱萸、山药、泽泻、牡丹皮、茯苓",
+    usage: "教学示例。滋补肝肾，丸剂或汤剂遵医嘱。",
+    indications: "肝肾阴虚，腰膝酸软、头晕耳鸣、盗汗、五心烦热、舌红少苔。",
+    modifications: "虚火明显可知柏地黄丸；眼目昏花可杞菊地黄丸；阳虚畏寒不宜机械套用。",
+    modern: "常用于代谢、内分泌、衰老相关证候研究讨论。"
+  },
+  "知柏地黄丸": {
+    source: "六味地黄丸加知母、黄柏化裁",
+    composition: "熟地黄、山茱萸、山药、泽泻、牡丹皮、茯苓、知母、黄柏",
+    usage: "教学示例。滋阴降火，苦寒药需辨脾胃承受能力。",
+    indications: "阴虚火旺，潮热盗汗、口干咽燥、骨蒸、舌红少苔、脉细数。",
+    modifications: "虚火重清虚热；脾虚便溏慎用苦寒。",
+    modern: "用于阴虚内热相关证候讨论，需结合感染、内分泌等检查。"
+  },
+  "血府逐瘀汤": {
+    source: "《医林改错》",
+    composition: "桃仁、红花、当归、生地黄、川芎、赤芍、牛膝、桔梗、柴胡、枳壳、甘草",
+    usage: "教学示例。活血化瘀、行气止痛，出血倾向和抗凝用药者慎用。",
+    indications: "胸中血瘀，胸痛、头痛日久、痛有定处、舌暗或瘀点、脉涩。",
+    modifications: "气滞重加行气；寒凝加温通；疑似心梗、肺栓塞等必须急诊。",
+    modern: "常用于胸痛、头痛、循环相关证候研究，不能替代急症筛查。"
+  },
+  "龙胆泻肝汤": {
+    source: "《医方集解》",
+    composition: "龙胆草、黄芩、栀子、泽泻、木通、车前子、当归、生地黄、柴胡、甘草",
+    usage: "教学示例。清肝胆实火、利湿热，苦寒力强需辨证。",
+    indications: "肝胆实火或湿热下注，头痛目赤、胁痛口苦、耳鸣耳聋、尿赤、带下黄臭。",
+    modifications: "湿重利湿；火重清火；脾胃虚寒慎用。",
+    modern: "涉及肝胆、泌尿生殖炎症样症状讨论，需现代检查确认。"
+  },
+  "平胃散": {
+    source: "《太平惠民和剂局方》",
+    composition: "苍术、厚朴、陈皮、甘草、生姜、大枣",
+    usage: "教学示例。燥湿运脾、行气和胃。",
+    indications: "湿滞脾胃，脘腹胀满、食少、恶心、肢体困重、苔白腻。",
+    modifications: "湿热加清热利湿；食积加消食；脾虚明显需兼补。",
+    modern: "用于湿困脾胃、功能性消化不良相关教学讨论。"
   }
+};
+
+const herbKnowledge = {
+  "人参": { type: "补气药", nature: "甘、微苦，微温；归脾、肺、心、肾经", actions: "大补元气，补脾益肺，生津养血，安神益智。", dosage: "教学示例：常见 3-9g，另煎或研末另服需医师指导。", western: "研究涉及免疫调节、抗疲劳、代谢和认知等方向。", safety: "实热、湿热、表实未解者慎用；与抗凝、降糖等药物同用需专业评估。" },
+  "黄芪": { type: "补气药", nature: "甘，微温；归脾、肺经", actions: "补气升阳，固表止汗，利水消肿，托毒生肌。", dosage: "教学示例：9-30g，补气升提或固表用途不同。", western: "研究涉及免疫、心肾保护、疲劳和蛋白尿等方向。", safety: "实热、阴虚阳亢、表实邪盛慎用。" },
+  "白术": { type: "补气健脾药", nature: "苦、甘，温；归脾、胃经", actions: "健脾益气，燥湿利水，止汗，安胎。", dosage: "教学示例：6-12g。", western: "研究涉及胃肠动力、免疫和水液代谢。", safety: "阴虚燥渴、津亏便秘慎用。" },
+  "茯苓": { type: "利水渗湿药", nature: "甘、淡，平；归心、肺、脾、肾经", actions: "利水渗湿，健脾，宁心。", dosage: "教学示例：9-15g。", western: "研究涉及利尿、免疫调节、镇静和代谢。", safety: "阴虚津伤、小便过多者慎用。" },
+  "甘草": { type: "补气调和药", nature: "甘，平；归心、肺、脾、胃经", actions: "补脾益气，清热解毒，祛痰止咳，缓急止痛，调和诸药。", dosage: "教学示例：2-10g。", western: "甘草酸相关研究涉及抗炎、肝保护等。", safety: "长期大剂量可致水钠潴留、血压升高、低钾；高血压、心肾病慎用。" },
+  "当归": { type: "补血活血药", nature: "甘、辛，温；归肝、心、脾经", actions: "补血活血，调经止痛，润肠通便。", dosage: "教学示例：6-12g。", western: "研究涉及造血、微循环、抗炎和妇科相关。", safety: "出血倾向、月经过多、腹泻者慎用；抗凝药同用需评估。" },
+  "白芍": { type: "补血柔肝药", nature: "苦、酸，微寒；归肝、脾经", actions: "养血调经，敛阴止汗，柔肝止痛，平抑肝阳。", dosage: "教学示例：6-15g。", western: "研究涉及镇痛、抗炎、免疫调节。", safety: "阳衰虚寒、腹痛泄泻慎用。" },
+  "柴胡": { type: "解表疏肝药", nature: "辛、苦，微寒；归肝、胆、肺经", actions: "疏散退热，疏肝解郁，升举阳气。", dosage: "教学示例：3-10g。", western: "研究涉及抗炎、肝胆、情绪应激方向。", safety: "阴虚阳亢、肝阳上亢明显者慎用；肝病患者需专业评估。" },
+  "陈皮": { type: "理气药", nature: "辛、苦，温；归脾、肺经", actions: "理气健脾，燥湿化痰。", dosage: "教学示例：3-10g。", western: "研究涉及胃肠动力、祛痰、黄酮类抗氧化。", safety: "气虚阴亏、燥咳吐血慎用。" },
+  "半夏": { type: "化痰止呕药", nature: "辛，温；有毒；归脾、胃、肺经", actions: "燥湿化痰，降逆止呕，消痞散结。", dosage: "教学示例：多用制半夏 3-9g。", western: "研究涉及止吐、祛痰、胃肠调节。", safety: "必须炮制使用；孕妇、阴虚燥咳、出血者慎用。" },
+  "酸枣仁": { type: "养心安神药", nature: "甘、酸，平；归心、肝、胆经", actions: "养心补肝，宁心安神，敛汗，生津。", dosage: "教学示例：10-20g，失眠常用炒品。", western: "研究涉及睡眠、镇静、焦虑相关。", safety: "嗜睡者、驾驶和镇静药同用需谨慎。" },
+  "远志": { type: "安神化痰药", nature: "苦、辛，温；归心、肾、肺经", actions: "安神益智，交通心肾，祛痰开窍，消散痈肿。", dosage: "教学示例：3-10g。", western: "研究涉及认知、镇静、祛痰。", safety: "胃炎、溃疡、阴虚火旺者慎用。" },
+  "天麻": { type: "平肝息风药", nature: "甘，平；归肝经", actions: "息风止痉，平抑肝阳，祛风通络。", dosage: "教学示例：3-10g。", western: "研究涉及眩晕、头痛、神经保护。", safety: "血虚无风、津液亏虚者需辨证；过敏少见但需注意。" },
+  "钩藤": { type: "平肝息风药", nature: "甘，微寒；归肝、心包经", actions: "息风定惊，清热平肝。", dosage: "教学示例：6-15g，常后下。", western: "研究涉及血压、神经兴奋性和镇静。", safety: "低血压或降压药同用需监测。" },
+  "石决明": { type: "平肝潜阳药", nature: "咸，寒；归肝经", actions: "平肝潜阳，清肝明目。", dosage: "教学示例：15-30g，先煎。", western: "主要为矿物贝壳类钙质药材相关方义研究。", safety: "脾胃虚寒慎用。" },
+  "川芎": { type: "活血行气药", nature: "辛，温；归肝、胆、心包经", actions: "活血行气，祛风止痛。", dosage: "教学示例：3-10g。", western: "研究涉及头痛、微循环、抗血小板。", safety: "阴虚火旺、出血倾向、孕期慎用。" },
+  "金银花": { type: "清热解毒药", nature: "甘，寒；归肺、心、胃经", actions: "清热解毒，疏散风热。", dosage: "教学示例：6-15g。", western: "研究涉及抗炎、抗菌、抗病毒方向。", safety: "脾胃虚寒、便溏慎用。" },
+  "连翘": { type: "清热解毒药", nature: "苦，微寒；归肺、心、小肠经", actions: "清热解毒，消肿散结，疏散风热。", dosage: "教学示例：6-15g。", western: "研究涉及上呼吸道感染、抗炎抗氧化。", safety: "脾胃虚寒慎用。" },
+  "黄芩": { type: "清热燥湿药", nature: "苦，寒；归肺、胆、脾、大肠、小肠经", actions: "清热燥湿，泻火解毒，止血，安胎。", dosage: "教学示例：3-10g。", western: "黄芩苷研究涉及抗炎、抗病毒、肝胆。", safety: "苦寒伤胃，脾胃虚寒慎用。" },
+  "黄连": { type: "清热燥湿药", nature: "苦，寒；归心、脾、胃、肝、胆、大肠经", actions: "清热燥湿，泻火解毒。", dosage: "教学示例：2-5g。", western: "小檗碱相关研究涉及肠道、代谢、抗菌。", safety: "苦寒力强，脾胃虚寒、孕期慎用；与多药相互作用需评估。" },
+  "熟地黄": { type: "补血滋阴药", nature: "甘，微温；归肝、肾经", actions: "补血滋阴，益精填髓。", dosage: "教学示例：9-15g。", western: "研究涉及造血、内分泌、免疫和抗衰老。", safety: "滋腻碍胃，痰湿、便溏、纳差者慎用。" },
+  "生地黄": { type: "清热凉血药", nature: "甘、苦，寒；归心、肝、肾经", actions: "清热凉血，养阴生津。", dosage: "教学示例：9-15g。", western: "研究涉及抗炎、免疫和糖代谢。", safety: "脾虚湿滞、便溏者慎用。" },
+  "麦冬": { type: "养阴药", nature: "甘、微苦，微寒；归心、肺、胃经", actions: "养阴润肺，益胃生津，清心除烦。", dosage: "教学示例：6-12g。", western: "研究涉及黏膜保护、抗炎、心血管。", safety: "脾胃虚寒泄泻、痰湿咳嗽慎用。" },
+  "丹参": { type: "活血祛瘀药", nature: "苦，微寒；归心、肝经", actions: "活血祛瘀，通经止痛，清心除烦，凉血消痈。", dosage: "教学示例：9-15g。", western: "研究涉及冠脉循环、抗血小板、抗炎。", safety: "抗凝/抗血小板药同用、出血倾向、孕期慎用。" },
+  "桃仁": { type: "活血祛瘀药", nature: "苦、甘，平；归心、肝、大肠经", actions: "活血祛瘀，润肠通便，止咳平喘。", dosage: "教学示例：5-10g。", western: "研究涉及微循环、肠道润滑、炎症。", safety: "孕期、出血倾向、抗凝用药慎用。" },
+  "红花": { type: "活血调经药", nature: "辛，温；归心、肝经", actions: "活血通经，散瘀止痛。", dosage: "教学示例：3-10g。", western: "研究涉及微循环和血液流变。", safety: "孕期、月经过多、出血倾向慎用。" }
 };
 
 const graphSets = {
@@ -355,18 +544,30 @@ function applyLanguage() {
 function renderSymptoms() {
   const box = document.querySelector("#symptomChips");
   box.innerHTML = "";
-  symptomOptions.forEach((item) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = `chip ${state.selectedSymptoms.has(item.id) ? "active" : ""}`;
-    button.textContent = state.inputLang === "zh" ? item.zh : item.en;
-    button.addEventListener("click", () => {
-      state.selectedSymptoms.has(item.id)
-        ? state.selectedSymptoms.delete(item.id)
-        : state.selectedSymptoms.add(item.id);
-      renderSymptoms();
+  symptomGroups.forEach((group) => {
+    const section = document.createElement("section");
+    section.className = "symptom-group";
+    const heading = document.createElement("h3");
+    heading.textContent = state.inputLang === "zh" ? group.zh : group.en;
+    section.appendChild(heading);
+
+    const chips = document.createElement("div");
+    chips.className = "symptom-group-grid";
+    group.items.forEach(([id, zh, en]) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `chip ${state.selectedSymptoms.has(id) ? "active" : ""}`;
+      button.textContent = state.inputLang === "zh" ? zh : en;
+      button.addEventListener("click", () => {
+        state.selectedSymptoms.has(id)
+          ? state.selectedSymptoms.delete(id)
+          : state.selectedSymptoms.add(id);
+        renderSymptoms();
+      });
+      chips.appendChild(button);
     });
-    box.appendChild(button);
+    section.appendChild(chips);
+    box.appendChild(section);
   });
 }
 
@@ -438,7 +639,7 @@ function analyze() {
       ? "Risk level: moderate. 本系统仅用于研究与教学。"
       : "Risk level: moderate. This system is for research and education only.";
   document.querySelector("#formulaName").textContent = data[3];
-  document.querySelector("#formulaDetail").textContent = data[4];
+  document.querySelector("#formulaDetail").innerHTML = renderKnowledgeLinks(data[4]);
 
   const confidence = profile === "liver" ? 0.87 : profile === "exterior" ? 0.82 : profile === "heartSpleen" ? 0.84 : profile === "yin" ? 0.83 : 0.79;
   document.querySelector("#confidenceBadge").textContent = confidence.toFixed(2);
@@ -1336,8 +1537,10 @@ function renderRole() {
 }
 
 function openKnowledge(name) {
-  const normalized = Object.keys(formulaKnowledge).find((key) => name.includes(key));
-  const item = formulaKnowledge[normalized];
+  const formulaName = Object.keys(formulaKnowledge).find((key) => name.includes(key));
+  const herbName = Object.keys(herbKnowledge).find((key) => name.includes(key));
+  const normalized = formulaName || herbName || name;
+  const item = formulaName ? formulaKnowledge[formulaName] : herbKnowledge[herbName];
   const popover = document.querySelector("#knowledgePopover");
   const title = document.querySelector("#knowledgeTitle");
   const body = document.querySelector("#knowledgeBody");
@@ -1345,19 +1548,37 @@ function openKnowledge(name) {
   title.textContent = normalized || name;
   if (!item) {
     body.innerHTML = `<p>后台尚未录入该方剂或中药说明。管理员可在方药知识库中补充。</p>`;
-  } else {
+  } else if (formulaName) {
     body.innerHTML = `
       <dl>
         <dt>出处</dt><dd>${item.source}</dd>
-        <dt>组成</dt><dd>${item.composition}</dd>
+        <dt>组成</dt><dd>${renderKnowledgeLinks(item.composition)}</dd>
         <dt>用法用量</dt><dd>${item.usage}</dd>
         <dt>适用范围</dt><dd>${item.indications}</dd>
         <dt>加减应用</dt><dd>${item.modifications}</dd>
         <dt>现代说明</dt><dd>${item.modern}</dd>
       </dl>
     `;
+  } else {
+    body.innerHTML = `
+      <dl>
+        <dt>类别</dt><dd>${item.type}</dd>
+        <dt>性味归经</dt><dd>${item.nature}</dd>
+        <dt>中医功效</dt><dd>${item.actions}</dd>
+        <dt>用法用量</dt><dd>${item.dosage}</dd>
+        <dt>现代研究/西医应用方向</dt><dd>${item.western}</dd>
+        <dt>安全提醒</dt><dd>${item.safety}</dd>
+      </dl>
+    `;
   }
   popover.hidden = false;
+}
+
+function renderKnowledgeLinks(text) {
+  return text.split(/(、|，|,|；|;|\s+)/).map((part) => {
+    if (herbKnowledge[part]) return `<button class="knowledge-link" type="button" data-knowledge="${part}">${part}</button>`;
+    return part;
+  }).join("");
 }
 
 function resetDemoData() {
@@ -1448,6 +1669,14 @@ document.querySelector("#localModelFile")?.addEventListener("change", inspectLoc
 document.querySelector("#createInviteButton")?.addEventListener("click", createInviteCode);
 document.querySelector("#formulaName")?.addEventListener("click", () => {
   openKnowledge(document.querySelector("#formulaName").textContent || "");
+});
+document.querySelector("#formulaDetail")?.addEventListener("click", (event) => {
+  const target = event.target.closest("[data-knowledge]");
+  if (target) openKnowledge(target.dataset.knowledge || target.textContent || "");
+});
+document.querySelector("#knowledgeBody")?.addEventListener("click", (event) => {
+  const target = event.target.closest("[data-knowledge]");
+  if (target) openKnowledge(target.dataset.knowledge || target.textContent || "");
 });
 document.querySelector("#closeKnowledgeButton")?.addEventListener("click", () => {
   document.querySelector("#knowledgePopover").hidden = true;

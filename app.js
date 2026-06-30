@@ -181,8 +181,23 @@ const symptomGroups = [
     items: [
       ["headache", "头痛", "Headache"], ["frontalHeadache", "前头痛", "Frontal headache"], ["occipitalHeadache", "后头痛", "Occipital headache"],
       ["temporalHeadache", "两侧头痛", "Temporal headache"], ["vertexHeadache", "巅顶痛", "Vertex headache"], ["dizziness", "眩晕", "Dizziness"],
-      ["blurredVision", "目昏", "Blurred vision"], ["redEyes", "目赤", "Red eyes"], ["tinnitus", "耳鸣", "Tinnitus"], ["dryMouth", "口干", "Dry mouth"],
-      ["bitter", "口苦", "Bitter taste"], ["throatPain", "咽痛", "Sore throat"]
+      ["heavyHead", "头重如裹", "Heavy head"], ["emptyHeadache", "头空痛", "Empty headache"], ["blurredVision", "目昏", "Blurred vision"],
+      ["redEyes", "目赤", "Red eyes"], ["dryEyes", "目涩", "Dry eyes"], ["tinnitus", "耳鸣", "Tinnitus"], ["deafness", "耳聋", "Hearing loss"],
+      ["nasalObstruction", "鼻塞", "Nasal obstruction"], ["runnyNose", "流涕", "Runny nose"], ["noseBleed", "鼻衄", "Nosebleed"],
+      ["dryMouth", "口干", "Dry mouth"], ["bitter", "口苦", "Bitter taste"], ["mouthOdor", "口臭", "Bad breath"], ["gumBleed", "齿衄", "Gum bleeding"],
+      ["throatPain", "咽痛", "Sore throat"], ["foreignBodyThroat", "咽中异物感", "Globus sensation"]
+    ]
+  },
+  {
+    id: "thirstTaste",
+    zh: "口渴饮水口味",
+    en: "Thirst, drinking, taste",
+    items: [
+      ["thirst", "口渴", "Thirst"], ["noDesireToDrink", "渴不欲饮", "Thirst without desire to drink"], ["coldDrinkPreference", "喜冷饮", "Prefers cold drinks"],
+      ["warmDrinkPreference", "喜热饮", "Prefers warm drinks"], ["excessiveDrinking", "多饮", "Excessive drinking"], ["dryThroat", "咽干", "Dry throat"],
+      ["blandTaste", "口淡", "Bland taste"], ["sweetTaste", "口甜", "Sweet taste"], ["stickyMouth", "口黏", "Sticky mouth"],
+      ["sourTaste", "口酸", "Sour taste"], ["saltyTaste", "口咸", "Salty taste"], ["hungerNoAppetite", "饥不欲食", "Hungry but no appetite"],
+      ["rapidHunger", "消谷善饥", "Rapid hunger"]
     ]
   },
   {
@@ -212,8 +227,11 @@ const symptomGroups = [
     items: [
       ["poorAppetite", "纳差", "Poor appetite"], ["nausea", "恶心", "Nausea"], ["vomiting", "呕吐", "Vomiting"], ["acidRegurgitation", "反酸", "Acid regurgitation"],
       ["abdominalDistension", "腹胀", "Abdominal distension"], ["abdominalPain", "腹痛", "Abdominal pain"], ["looseStool", "便溏", "Loose stool"], ["diarrhea", "泄泻", "Diarrhea"],
-      ["constipation", "便秘", "Constipation"], ["dryStool", "大便干", "Dry stool"], ["frequentUrination", "尿频", "Frequent urination"], ["shortYellowUrine", "小便短黄", "Scanty yellow urine"],
-      ["edema", "水肿", "Edema"]
+      ["constipation", "便秘", "Constipation"], ["dryStool", "大便干", "Dry stool"], ["stickyStool", "大便黏滞", "Sticky stool"], ["undigestedFoodStool", "完谷不化", "Undigested food in stool"],
+      ["tenesmus", "里急后重", "Tenesmus"], ["bloodStool", "便血", "Blood in stool"], ["frequentUrination", "尿频", "Frequent urination"],
+      ["urgentUrination", "尿急", "Urgent urination"], ["painfulUrination", "尿痛", "Painful urination"], ["shortYellowUrine", "小便短黄", "Scanty yellow urine"],
+      ["clearLongUrine", "小便清长", "Clear profuse urine"], ["nightUrination", "夜尿多", "Nocturia"], ["urinaryRetention", "癃闭", "Urinary retention"],
+      ["hematuria", "尿血", "Blood in urine"], ["edema", "水肿", "Edema"]
     ]
   },
   {
@@ -228,12 +246,34 @@ const symptomGroups = [
   },
   {
     id: "painLimbs",
-    zh: "经络肢体",
+    zh: "经络肢体疼痛",
     en: "Channels, limbs, pain",
     items: [
       ["neckStiffness", "项强", "Neck stiffness"], ["shoulderPain", "肩痛", "Shoulder pain"], ["lowBackPain", "腰痛", "Low back pain"], ["kneeWeakness", "膝软", "Weak knees"],
       ["limbNumbness", "肢麻", "Limb numbness"], ["jointPain", "关节痛", "Joint pain"], ["fixedPain", "刺痛固定", "Fixed stabbing pain"], ["coldLimbs", "四肢冷", "Cold limbs"],
-      ["hotPalmsSoles", "手足心热", "Hot palms and soles"]
+      ["hotPalmsSoles", "手足心热", "Hot palms and soles"], ["wanderingPain", "游走痛", "Wandering pain"], ["distendingPain", "胀痛", "Distending pain"],
+      ["coldPain", "冷痛", "Cold pain"], ["burningPain", "灼痛", "Burning pain"], ["dullPain", "隐痛", "Dull pain"], ["colicPain", "绞痛", "Colicky pain"],
+      ["heavyPain", "重痛", "Heavy pain"], ["emptyPain", "空痛", "Empty pain"]
+    ]
+  },
+  {
+    id: "skinSurface",
+    zh: "皮肤体表",
+    en: "Skin and surface",
+    items: [
+      ["skinItching", "皮肤瘙痒", "Skin itching"], ["rash", "皮疹", "Rash"], ["wheal", "风团", "Wheal"], ["eczemaLike", "湿疹样", "Eczema-like rash"],
+      ["jaundice", "黄疸", "Jaundice"], ["paleComplexion", "面色苍白", "Pale complexion"], ["sallowComplexion", "面色萎黄", "Sallow complexion"],
+      ["redComplexion", "面红", "Red complexion"], ["darkComplexion", "面色晦暗", "Dull dark complexion"], ["scalyDrySkin", "肌肤甲错", "Dry scaly skin"],
+      ["bruising", "紫斑", "Purpura"], ["soreSwelling", "疮疡肿痛", "Sore swelling"]
+    ]
+  },
+  {
+    id: "bleeding",
+    zh: "出血相关",
+    en: "Bleeding signs",
+    items: [
+      ["hemoptysis", "咯血", "Hemoptysis"], ["hematemesis", "吐血", "Hematemesis"], ["melena", "黑便", "Melena"], ["skinBleeding", "肌衄", "Skin bleeding"],
+      ["easyBruising", "易瘀斑", "Easy bruising"], ["prolongedBleeding", "出血不止", "Prolonged bleeding"]
     ]
   },
   {
@@ -242,7 +282,31 @@ const symptomGroups = [
     en: "Gynecology",
     items: [
       ["irregularMenses", "月经不调", "Irregular menstruation"], ["dysmenorrhea", "痛经", "Dysmenorrhea"], ["amenorrhea", "闭经", "Amenorrhea"], ["heavyMenses", "月经过多", "Heavy menses"],
-      ["scantyMenses", "月经过少", "Scanty menses"], ["leukorrhea", "带下", "Leukorrhea"], ["postpartumFatigue", "产后乏力", "Postpartum fatigue"]
+      ["scantyMenses", "月经过少", "Scanty menses"], ["darkMenses", "经色暗", "Dark menstrual blood"], ["paleMenses", "经色淡", "Pale menstrual blood"],
+      ["clottedMenses", "经血块", "Menstrual clots"], ["premenstrualBreastDistension", "经前乳胀", "Premenstrual breast distension"],
+      ["warmRelievedDysmenorrhea", "痛经喜温", "Dysmenorrhea relieved by warmth"], ["pressureWorseDysmenorrhea", "痛经拒按", "Dysmenorrhea worse with pressure"],
+      ["leukorrhea", "带下", "Leukorrhea"], ["yellowLeukorrhea", "黄带", "Yellow leukorrhea"], ["clearLeukorrhea", "清稀带下", "Clear watery leukorrhea"],
+      ["postpartumFatigue", "产后乏力", "Postpartum fatigue"]
+    ]
+  },
+  {
+    id: "maleRepro",
+    zh: "男科生殖",
+    en: "Male reproductive",
+    items: [
+      ["impotence", "阳痿", "Impotence"], ["prematureEjaculation", "早泄", "Premature ejaculation"], ["seminalEmission", "遗精", "Seminal emission"],
+      ["scrotalDampness", "阴囊潮湿", "Scrotal dampness"], ["testicularPain", "睾丸痛", "Testicular pain"], ["lowerAbdominalBearingDown", "小腹坠胀", "Lower abdominal bearing-down"],
+      ["postVoidDribbling", "尿后余沥", "Post-void dribbling"]
+    ]
+  },
+  {
+    id: "children",
+    zh: "小儿相关",
+    en: "Pediatrics",
+    items: [
+      ["childNightCrying", "夜啼", "Night crying"], ["childStartle", "易惊", "Easily startled"], ["foodStagnation", "食积", "Food stagnation"],
+      ["childAnorexia", "小儿厌食", "Pediatric anorexia"], ["febrileConvulsion", "高热惊厥", "Febrile convulsion"], ["childDiarrhea", "小儿腹泻", "Pediatric diarrhea"],
+      ["enuresis", "遗尿", "Enuresis"], ["delayedDevelopment", "发育迟缓", "Delayed development"]
     ]
   }
 ];
@@ -589,23 +653,23 @@ function analyze() {
     scores[profile] += amount;
   };
 
-  if (selected.has("headache") || selected.has("temporalHeadache") || selected.has("vertexHeadache") || selected.has("dizziness")) add("liver", 2);
-  if (selected.has("bitter") || tongue === "red" || tongue === "darkRed" || pulse === "wiry") add("liver", 1);
-  if (selected.has("chestPain") || selected.has("chestTightness") || mentions(["胸痛", "胸闷", "chest pain"])) add("liver", 3);
+  if (selected.has("headache") || selected.has("temporalHeadache") || selected.has("vertexHeadache") || selected.has("dizziness") || selected.has("redEyes") || selected.has("ribPain")) add("liver", 2);
+  if (selected.has("bitter") || selected.has("mouthOdor") || selected.has("distendingPain") || selected.has("sighing") || tongue === "red" || tongue === "darkRed" || pulse === "wiry") add("liver", 1);
+  if (selected.has("chestPain") || selected.has("chestTightness") || selected.has("fixedPain") || selected.has("darkMenses") || selected.has("clottedMenses") || mentions(["胸痛", "胸闷", "刺痛", "血块", "chest pain"])) add("liver", 3);
 
-  if (selected.has("fever") || selected.has("chills") || selected.has("cough") || selected.has("occipitalHeadache")) add("exterior", 2);
-  if (selected.has("phlegm") || selected.has("wheezing") || pulse === "floating" || mentions(["发热", "咳嗽", "后头痛", "恶寒", "fever", "cough"])) add("exterior", 1);
+  if (selected.has("fever") || selected.has("chills") || selected.has("aversionWind") || selected.has("cough") || selected.has("occipitalHeadache") || selected.has("runnyNose")) add("exterior", 2);
+  if (selected.has("phlegm") || selected.has("whitePhlegm") || selected.has("yellowPhlegm") || selected.has("wheezing") || selected.has("noSweat") || pulse === "floating" || mentions(["发热", "咳嗽", "后头痛", "恶寒", "鼻塞", "fever", "cough"])) add("exterior", 1);
 
-  if (selected.has("fatigue") || selected.has("poorAppetite") || selected.has("looseStool") || selected.has("edema")) add("qi", 2);
-  if (tongue === "pale" || tongue === "teethMarked" || tongue === "swollen" || pulse === "deep" || pulse === "deficient" || mentions(["乏力", "纳差", "便溏", "fatigue"])) add("qi", 1);
+  if (selected.has("fatigue") || selected.has("poorAppetite") || selected.has("looseStool") || selected.has("undigestedFoodStool") || selected.has("edema") || selected.has("sallowComplexion")) add("qi", 2);
+  if (selected.has("warmDrinkPreference") || selected.has("clearLongUrine") || selected.has("nightUrination") || selected.has("coldLimbs") || tongue === "pale" || tongue === "teethMarked" || tongue === "swollen" || pulse === "deep" || pulse === "deficient" || mentions(["乏力", "纳差", "便溏", "怕冷", "fatigue"])) add("qi", 1);
 
-  if (selected.has("insomnia") || selected.has("dreaminess") || selected.has("palpitation")) add("heartSpleen", 2);
-  if (selected.has("poorAppetite") || selected.has("looseStool") || selected.has("fatigue")) add("heartSpleen", 1);
+  if (selected.has("insomnia") || selected.has("dreaminess") || selected.has("palpitation") || selected.has("forgetfulness") || selected.has("anxiety")) add("heartSpleen", 2);
+  if (selected.has("poorAppetite") || selected.has("looseStool") || selected.has("fatigue") || selected.has("paleComplexion") || selected.has("scantyMenses") || selected.has("paleMenses")) add("heartSpleen", 1);
   if (tongue === "tender" || tongue === "pale" || pulse === "weak" || pulse === "deficient" || pulse === "thin") add("heartSpleen", 2);
   if (mentions(["失眠", "多梦", "心悸", "健忘", "insomnia", "dream"])) add("heartSpleen", 2);
 
-  if (selected.has("nightSweat") || tongue === "scanty" || tongue === "peeled" || pulse === "thin" || pulse === "rapid") add("yin", 2);
-  if ((selected.has("insomnia") || selected.has("dreaminess")) && (tongue === "scanty" || pulse === "thin" || selected.has("nightSweat"))) add("yin", 2);
+  if (selected.has("nightSweat") || selected.has("fiveCenterHeat") || selected.has("tidalFever") || selected.has("dryThroat") || selected.has("hotPalmsSoles") || tongue === "scanty" || tongue === "peeled" || pulse === "thin" || pulse === "rapid") add("yin", 2);
+  if ((selected.has("insomnia") || selected.has("dreaminess")) && (tongue === "scanty" || pulse === "thin" || selected.has("nightSweat") || selected.has("fiveCenterHeat"))) add("yin", 2);
 
   let profile = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
   if (scores[profile] === 0) profile = "heartSpleen";

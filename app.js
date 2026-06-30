@@ -504,6 +504,30 @@ const formulaKnowledge = {
     indications: "食积停滞，脘腹胀满、嗳腐吞酸、厌食、大便酸臭或不爽。",
     modifications: "脾虚食少应健脾为主；发热腹痛、呕吐腹泻明显需排查感染和急腹症。",
     modern: "用于消化不良、食积样表现的教学讨论。"
+  },
+  "增液汤": {
+    source: "《温病条辨》",
+    composition: "玄参、麦冬、生地黄",
+    usage: "教学示例。增液润燥、滋阴生津，实际剂量需医师辨证。",
+    indications: "津液不足、肠燥便秘、口干咽燥、舌红少津等。",
+    modifications: "实热便秘需辨是否合通腑；脾虚便溏、痰湿重者慎用滋腻。",
+    modern: "用于津亏燥结、口干便秘等证候教学，需排查糖尿病、脱水、药物副作用等。"
+  },
+  "沙参麦冬汤": {
+    source: "《温病条辨》",
+    composition: "沙参、玉竹、生甘草、冬桑叶、麦冬、生扁豆、天花粉",
+    usage: "教学示例。清养肺胃、生津润燥。",
+    indications: "燥伤肺胃或肺胃阴伤，干咳少痰、咽干口渴、舌红少苔。",
+    modifications: "咳血、久咳、发热不退需现代医学检查；痰湿重者不宜单纯养阴。",
+    modern: "用于干咳、咽燥、口干等肺胃阴伤证候教学。"
+  },
+  "养阴清肺汤": {
+    source: "《重楼玉钥》",
+    composition: "大生地、麦冬、玄参、贝母、丹皮、薄荷、白芍、甘草",
+    usage: "教学示例。养阴清肺，解毒利咽。",
+    indications: "阴虚肺燥或咽喉燥痛，咽干、鼻干、干咳、舌红少苔等。",
+    modifications: "咽喉梗阻、呼吸困难、高热需急诊；寒湿痰多者慎用。",
+    modern: "用于阴虚燥热咽喉症状的方义教学，不替代耳鼻喉诊疗。"
   }
 };
 
@@ -573,6 +597,12 @@ const graphSets = {
     ["阴虚内热", "Yin deficiency", 104, 128, true],
     ["天王补心丹", "Formula", 216, 190, false]
   ],
+  fluidDeficiency: [
+    ["口干咽干", "Dry mouth", 28, 48, true],
+    ["少苔/燥苔", "Dry coating", 170, 40, false],
+    ["津液不足", "Fluid deficiency", 104, 128, true],
+    ["增液汤", "Formula", 216, 190, false]
+  ],
   dampHeat: [
     ["尿黄口黏", "Damp heat", 28, 48, true],
     ["苔腻脉数", "Greasy coating", 170, 40, false],
@@ -614,6 +644,12 @@ const graphSets = {
     ["危险信号", "Red flags", 170, 40, false],
     ["出血证待辨", "Bleeding pattern", 104, 128, true],
     ["先查因止血", "Investigate first", 216, 190, false]
+  ],
+  undifferentiated: [
+    ["症状未全", "Incomplete", 28, 48, true],
+    ["舌脉未定", "Tongue/pulse unknown", 170, 40, false],
+    ["暂不强辨", "Do not force pattern", 104, 128, true],
+    ["继续补问", "Ask more", 216, 190, false]
   ]
 };
 
@@ -714,14 +750,24 @@ function analyze() {
   const freeText = document.querySelector("#freeText").value || "";
   const mentions = (terms) => terms.some((term) => freeText.toLowerCase().includes(term.toLowerCase()));
   const hasAny = (...ids) => ids.some((id) => selected.has(id));
+  const selectedItems = symptomOptions.filter((item) => selected.has(item.id));
+  const selectedLabels = selectedItems.map((item) => item.zh);
+  const tongueText = document.querySelector("#tongueSelect").selectedOptions[0]?.textContent?.split("/")[0]?.trim() || "未选择";
+  const pulseText = document.querySelector("#pulseSelect").selectedOptions[0]?.textContent?.split("/")[0]?.trim() || "未选择";
+  const evidence = [];
+  const addEvidence = (text) => {
+    if (text && !evidence.includes(text)) evidence.push(text);
+  };
 
   const scores = {
+    undifferentiated: 0,
     liver: 0,
     liverQi: 0,
     exterior: 0,
     qi: 0,
     heartSpleen: 0,
     yin: 0,
+    fluidDeficiency: 0,
     dampHeat: 0,
     phlegmDamp: 0,
     bloodStasis: 0,
@@ -734,50 +780,57 @@ function analyze() {
     scores[profile] += amount;
   };
 
-  if (selected.has("headache") || selected.has("temporalHeadache") || selected.has("vertexHeadache") || selected.has("dizziness") || selected.has("redEyes") || selected.has("ribPain")) add("liver", 2);
-  if (selected.has("bitter") || selected.has("mouthOdor") || selected.has("distendingPain") || selected.has("sighing") || tongue === "red" || tongue === "darkRed" || pulse === "wiry") add("liver", 1);
-  if (selected.has("chestPain") || selected.has("chestTightness") || selected.has("fixedPain") || selected.has("darkMenses") || selected.has("clottedMenses") || mentions(["胸痛", "胸闷", "刺痛", "血块", "chest pain"])) add("liver", 3);
+  if (!selected.size && tongue === "none" && pulse === "none" && !freeText.trim()) add("undifferentiated", 5);
 
-  if (selected.has("fever") || selected.has("chills") || selected.has("aversionWind") || selected.has("cough") || selected.has("occipitalHeadache") || selected.has("runnyNose")) add("exterior", 2);
-  if (selected.has("phlegm") || selected.has("whitePhlegm") || selected.has("yellowPhlegm") || selected.has("wheezing") || selected.has("noSweat") || pulse === "floating" || mentions(["发热", "咳嗽", "后头痛", "恶寒", "鼻塞", "fever", "cough"])) add("exterior", 1);
+  if (hasAny("headache", "temporalHeadache", "vertexHeadache", "dizziness", "redEyes", "ribPain")) { add("liver", 2); addEvidence("头目胁肋症状提示肝胆经或清窍受扰"); }
+  if (hasAny("bitter", "redEyes") || tongue === "red" || tongue === "darkRed") { add("liver", 1); add("stomachHeat", 1); addEvidence("红舌、目赤、口苦偏热象"); }
+  if (pulse === "wiry") { add("liverQi", 2); add("liver", 1); addEvidence("弦脉多见肝胆、气滞、疼痛或痰饮"); }
+  if (hasAny("chestPain", "chestTightness", "fixedPain", "darkMenses", "clottedMenses") || mentions(["胸痛", "胸闷", "刺痛", "血块", "chest pain"])) { add("bloodStasis", 3); add("liverQi", 1); addEvidence("刺痛固定、胸痛或血块提示血瘀/气滞风险"); }
 
-  if (selected.has("fatigue") || selected.has("poorAppetite") || selected.has("looseStool") || selected.has("undigestedFoodStool") || selected.has("edema") || selected.has("sallowComplexion")) add("qi", 2);
-  if (selected.has("warmDrinkPreference") || selected.has("clearLongUrine") || selected.has("nightUrination") || selected.has("coldLimbs") || tongue === "pale" || tongue === "teethMarked" || tongue === "swollen" || pulse === "deep" || pulse === "deficient" || mentions(["乏力", "纳差", "便溏", "怕冷", "fatigue"])) add("qi", 1);
+  if (hasAny("fever", "chills", "aversionWind", "cough", "occipitalHeadache", "runnyNose", "nasalObstruction")) { add("exterior", 2); addEvidence("发热恶寒、鼻塞流涕、咳嗽偏外感表证"); }
+  if (hasAny("phlegm", "whitePhlegm", "yellowPhlegm", "wheezing", "noSweat") || pulse === "floating" || mentions(["发热", "咳嗽", "后头痛", "恶寒", "鼻塞", "fever", "cough"])) { add("exterior", 1); }
 
-  if (selected.has("insomnia") || selected.has("dreaminess") || selected.has("palpitation") || selected.has("forgetfulness") || selected.has("anxiety")) add("heartSpleen", 2);
-  if (selected.has("poorAppetite") || selected.has("looseStool") || selected.has("fatigue") || selected.has("paleComplexion") || selected.has("scantyMenses") || selected.has("paleMenses")) add("heartSpleen", 1);
-  if (tongue === "tender" || tongue === "pale" || pulse === "weak" || pulse === "deficient" || pulse === "thin") add("heartSpleen", 2);
+  if (hasAny("fatigue", "poorAppetite", "looseStool", "undigestedFoodStool", "edema", "sallowComplexion", "shortBreath")) { add("qi", 2); addEvidence("乏力、纳差、便溏、气短提示脾肺气虚"); }
+  if (hasAny("warmDrinkPreference", "clearLongUrine", "nightUrination", "coldLimbs") || tongue === "pale" || tongue === "teethMarked" || tongue === "swollen" || pulse === "deep" || pulse === "deficient" || mentions(["乏力", "纳差", "便溏", "怕冷", "fatigue"])) { add("qi", 1); }
+
+  if (hasAny("insomnia", "dreaminess", "palpitation", "forgetfulness", "anxiety")) { add("heartSpleen", 2); addEvidence("失眠多梦、心悸健忘提示心神失养"); }
+  if (hasAny("poorAppetite", "looseStool", "fatigue", "paleComplexion", "scantyMenses", "paleMenses")) add("heartSpleen", 1);
+  if (tongue === "tender" || tongue === "pale" || pulse === "weak" || pulse === "deficient" || pulse === "thin") { add("heartSpleen", 2); addEvidence("舌嫩/舌淡、弱脉/虚脉/细脉偏虚证"); }
   if (mentions(["失眠", "多梦", "心悸", "健忘", "insomnia", "dream"])) add("heartSpleen", 2);
 
-  if (selected.has("nightSweat") || selected.has("fiveCenterHeat") || selected.has("tidalFever") || selected.has("dryThroat") || selected.has("hotPalmsSoles") || tongue === "scanty" || tongue === "peeled" || pulse === "thin" || pulse === "rapid") add("yin", 2);
-  if ((selected.has("insomnia") || selected.has("dreaminess")) && (tongue === "scanty" || pulse === "thin" || selected.has("nightSweat") || selected.has("fiveCenterHeat"))) add("yin", 2);
+  if (hasAny("nightSweat", "fiveCenterHeat", "tidalFever", "dryThroat", "hotPalmsSoles") || tongue === "scanty" || tongue === "peeled" || pulse === "thin" || pulse === "rapid") { add("yin", 2); addEvidence("盗汗、潮热、少苔、细数脉偏阴虚内热"); }
+  if ((hasAny("insomnia", "dreaminess")) && (tongue === "scanty" || pulse === "thin" || hasAny("nightSweat", "fiveCenterHeat"))) add("yin", 2);
 
-  if (hasAny("ribPain", "sighing", "distendingPain", "premenstrualBreastDistension", "irregularMenses", "anxiety", "foreignBodyThroat")) add("liverQi", 2);
-  if (hasAny("poorAppetite", "abdominalDistension", "acidRegurgitation") || pulse === "wiry" || mentions(["胁痛", "太息", "郁闷", "乳胀", "情志"])) add("liverQi", 1);
+  if (hasAny("dryMouth", "dryThroat", "thirst", "noDesireToDrink", "coldDrinkPreference", "cracked", "dryEyes") || tongue === "dry" || tongue === "cracked" || tongue === "scanty" || tongue === "peeled") { add("fluidDeficiency", 3); addEvidence("口干咽干、口渴、裂纹/燥苔提示津液不足或热伤津"); }
+  if (hasAny("dryStool", "constipation", "hotPalmsSoles", "tidalFever") || pulse === "thin" || pulse === "rapid") add("fluidDeficiency", 1);
 
-  if (hasAny("yellowPhlegm", "shortYellowUrine", "urgentUrination", "painfulUrination", "stickyStool", "tenesmus", "yellowLeukorrhea", "scrotalDampness", "skinItching", "eczemaLike", "jaundice")) add("dampHeat", 3);
-  if (hasAny("bitter", "mouthOdor", "stickyMouth", "fever") || tongue === "greasy" || tongue === "yellowCoating" || pulse === "rapid" || mentions(["湿热", "尿痛", "黄带", "口黏", "黄疸"])) add("dampHeat", 1);
+  if (hasAny("ribPain", "sighing", "distendingPain", "premenstrualBreastDistension", "irregularMenses", "anxiety", "foreignBodyThroat")) { add("liverQi", 2); addEvidence("胁胀、善太息、情志相关症状提示肝郁气滞"); }
+  if (hasAny("poorAppetite", "abdominalDistension", "acidRegurgitation") || mentions(["胁痛", "太息", "郁闷", "乳胀", "情志"])) add("liverQi", 1);
 
-  if (hasAny("phlegm", "whitePhlegm", "heavyHead", "chestTightness", "nausea", "abdominalDistension", "somnolence", "stickyMouth")) add("phlegmDamp", 2);
-  if (hasAny("poorAppetite", "looseStool", "edema") || tongue === "greasy" || tongue === "swollen" || mentions(["痰多", "头重", "困重", "苔腻"])) add("phlegmDamp", 1);
+  if (hasAny("yellowPhlegm", "shortYellowUrine", "urgentUrination", "painfulUrination", "stickyStool", "tenesmus", "yellowLeukorrhea", "scrotalDampness", "skinItching", "eczemaLike", "jaundice")) { add("dampHeat", 3); addEvidence("尿黄尿痛、黄带、黏滞便、皮肤湿痒提示湿热"); }
+  if (hasAny("bitter", "mouthOdor", "stickyMouth", "fever") || tongue === "greasy" || tongue === "yellow" || tongue === "thickGreasy" || pulse === "rapid" || mentions(["湿热", "尿痛", "黄带", "口黏", "黄疸"])) add("dampHeat", 1);
 
-  if (hasAny("fixedPain", "chestPain", "darkComplexion", "scalyDrySkin", "bruising", "darkMenses", "clottedMenses", "pressureWorseDysmenorrhea")) add("bloodStasis", 3);
-  if (tongue === "purple" || tongue === "darkRed" || pulse === "choppy" || mentions(["刺痛", "痛有定处", "瘀斑", "舌暗"])) add("bloodStasis", 2);
+  if (hasAny("phlegm", "whitePhlegm", "heavyHead", "chestTightness", "nausea", "abdominalDistension", "somnolence", "stickyMouth")) { add("phlegmDamp", 2); addEvidence("痰多、头重、胸闷、恶心、口黏提示痰湿阻滞"); }
+  if (hasAny("poorAppetite", "looseStool", "edema") || tongue === "greasy" || tongue === "thickGreasy" || tongue === "swollen" || pulse === "slippery" || mentions(["痰多", "头重", "困重", "苔腻"])) add("phlegmDamp", 1);
 
-  if (hasAny("mouthOdor", "rapidHunger", "coldDrinkPreference", "dryStool", "constipation", "gumBleed", "soreSwelling", "burningPain")) add("stomachHeat", 2);
-  if (hasAny("thirst", "bitter", "sourTaste") || tongue === "red" || pulse === "rapid" || mentions(["胃热", "口臭", "牙龈", "便秘"])) add("stomachHeat", 1);
+  if (hasAny("fixedPain", "chestPain", "darkComplexion", "scalyDrySkin", "bruising", "darkMenses", "clottedMenses", "pressureWorseDysmenorrhea")) { add("bloodStasis", 3); addEvidence("刺痛固定、经血块、面色晦暗、紫斑提示血瘀"); }
+  if (tongue === "purple" || tongue === "bluishPurple" || tongue === "darkRed" || pulse === "choppy" || mentions(["刺痛", "痛有定处", "瘀斑", "舌暗"])) add("bloodStasis", 2);
 
-  if (hasAny("coldLimbs", "clearLongUrine", "nightUrination", "lowBackPain", "kneeWeakness", "impotence", "prematureEjaculation", "enuresis", "warmDrinkPreference")) add("kidneyYang", 2);
+  if (hasAny("mouthOdor", "rapidHunger", "coldDrinkPreference", "dryStool", "constipation", "gumBleed", "soreSwelling", "burningPain")) { add("stomachHeat", 2); addEvidence("口臭、消谷善饥、便秘、牙龈出血提示胃肠实热"); }
+  if (hasAny("thirst", "bitter", "sourTaste") || tongue === "red" || tongue === "yellow" || pulse === "rapid" || mentions(["胃热", "口臭", "牙龈", "便秘"])) add("stomachHeat", 1);
+
+  if (hasAny("coldLimbs", "clearLongUrine", "nightUrination", "lowBackPain", "kneeWeakness", "impotence", "prematureEjaculation", "enuresis", "warmDrinkPreference")) { add("kidneyYang", 2); addEvidence("畏寒肢冷、夜尿、小便清长、腰膝酸软提示肾阳不足"); }
   if (tongue === "pale" || tongue === "swollen" || pulse === "deep" || pulse === "weak" || mentions(["畏寒", "腰膝酸软", "夜尿", "阳痿"])) add("kidneyYang", 1);
 
-  if (hasAny("foodStagnation", "childAnorexia", "childDiarrhea", "childNightCrying") || mentions(["食积", "嗳腐", "小儿厌食", "腹胀"])) add("childFood", 3);
+  if (hasAny("foodStagnation", "childAnorexia", "childDiarrhea", "childNightCrying") || mentions(["食积", "嗳腐", "小儿厌食", "腹胀"])) { add("childFood", 3); addEvidence("小儿厌食、食积、腹胀便臭提示食积停滞"); }
   if (hasAny("abdominalDistension", "poorAppetite", "undigestedFoodStool", "stickyStool")) add("childFood", 1);
 
-  if (hasAny("noseBleed", "gumBleed", "bloodStool", "hematuria", "hemoptysis", "hematemesis", "melena", "skinBleeding", "easyBruising", "prolongedBleeding", "heavyMenses")) add("bleeding", 4);
+  if (hasAny("noseBleed", "gumBleed", "bloodStool", "hematuria", "hemoptysis", "hematemesis", "melena", "skinBleeding", "easyBruising", "prolongedBleeding", "heavyMenses")) { add("bleeding", 4); addEvidence("出血类症状需优先辨危险信号和现代医学查因"); }
   if (hasAny("fever", "redComplexion", "rash", "bruising") || tongue === "red" || pulse === "rapid" || mentions(["出血", "咯血", "吐血", "黑便", "尿血"])) add("bleeding", 1);
 
-  let profile = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
-  if (scores[profile] === 0) profile = "heartSpleen";
+  const ranked = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  let profile = ranked[0][0];
+  if (ranked[0][1] <= 0) profile = "undifferentiated";
   state.lastProfile = profile;
 
   const zhResults = {
@@ -787,13 +840,15 @@ function analyze() {
     qi: ["脾肺气虚", "乏力、气短、纳差、便溏、面色萎黄、舌淡或脉虚提示气虚，脾失健运、肺气不足；治以益气健脾。", "需排查贫血、甲状腺异常、营养不良、慢性感染、睡眠障碍和心肺功能问题。", "四君子汤 / Si Jun Zi Tang；补中益气汤 / Bu Zhong Yi Qi Tang", "基础用人参、白术、茯苓、甘草补气健脾；久泻、下陷感、明显气短乏力可参考补中益气汤思路。"],
     heartSpleen: ["心脾两虚", "失眠、多梦、心悸、健忘、纳差便溏、舌嫩或弱脉提示心脾两虚、气血不足；治以益气健脾、养血安神。", "需评估焦虑抑郁、睡眠节律紊乱、贫血、甲状腺功能、消化吸收和长期压力因素。", "归脾汤 / Gui Pi Tang", "黄芪、人参、白术、茯神、酸枣仁、龙眼肉、当归、远志等。失眠重偏养心安神，便溏纳差重偏健脾。"],
     yin: ["阴虚内热", "盗汗、潮热、五心烦热、口咽干、少苔或脉细数提示阴液不足、虚热内扰；治以滋阴清热、养心安神。", "需排查甲状腺功能异常、感染后低热、围绝经期、焦虑、慢性消耗性疾病。", "天王补心丹 / Tian Wang Bu Xin Dan；知柏地黄丸 / Zhi Bai Di Huang Wan", "失眠心悸偏天王补心丹思路；腰膝酸软、盗汗骨蒸偏知柏地黄丸思路；含矿物药或苦寒药均需安全评估。"],
+    fluidDeficiency: ["津液不足 / 燥热伤津待辨", "口干、咽干、口渴、干便、裂纹舌、少苔或燥苔提示津液亏少；需进一步辨是实热伤津、阴虚内热、燥邪犯肺，还是湿热阻滞导致津不上承。治法随证为生津润燥、清热养阴或宣润肺胃。", "需评估饮水不足、口腔疾病、糖代谢异常、干燥综合征、药物副作用、发热脱水等。若明显多饮多尿、体重下降，应查血糖和尿常规。", "增液汤 / Zeng Ye Tang；沙参麦冬汤或养阴清肺汤思路", "单独口干不能直接开方。大便干结偏增液润肠；干咳咽燥偏养阴润肺；口苦口黏尿黄偏湿热，不宜单纯滋腻。"],
     dampHeat: ["湿热内蕴或湿热下注", "口苦口黏、小便短黄尿痛、大便黏滞、黄带、阴囊潮湿、皮肤瘙痒或黄疸提示湿热；治以清热利湿、分消湿浊。", "需排查泌尿感染、阴道炎/前列腺炎、肝胆疾病、肠炎、皮肤感染或过敏；黄疸、发热腰痛、血尿需尽快就医。", "龙胆泻肝汤 / Long Dan Xie Gan Tang；平胃散加清热利湿思路", "肝胆湿热、胁痛口苦尿赤偏龙胆泻肝汤；脾胃湿困偏平胃散化裁。苦寒清热药不可长期自行使用。"],
     phlegmDamp: ["痰湿阻滞", "头重如裹、痰多胸闷、恶心、纳差腹胀、嗜睡、苔腻提示痰湿内阻、清阳不升；治以燥湿化痰、理气和中。", "需结合呼吸道感染、慢性支气管炎、胃食管反流、代谢综合征、睡眠呼吸暂停等方向评估。", "二陈汤 / Er Chen Tang；六君子汤 / Liu Jun Zi Tang", "痰多胸闷偏二陈汤；气虚痰湿、纳差便溏偏六君子汤；黄痰发热需转清热化痰。"],
     bloodStasis: ["血瘀证", "刺痛固定、痛经拒按、经色暗有血块、面色晦暗、肌肤甲错、舌暗或脉涩提示血行不畅；治以活血化瘀、行气止痛。", "胸痛、突发肢体麻木、咯血黑便、外伤后疼痛等必须先排急症；抗凝用药、孕期、出血倾向需特别谨慎。", "血府逐瘀汤 / Xue Fu Zhu Yu Tang", "胸胁头痛日久、痛有定处偏血府逐瘀汤思路；寒凝加温通，气滞加行气。活血药必须核对禁忌。"],
     stomachHeat: ["胃热或胃肠实热", "口臭、牙龈出血、消谷善饥、喜冷饮、便秘大便干、口渴、舌红脉数提示胃热或胃肠积热；治以清胃泻热、通腑和胃。", "需排查口腔牙周疾病、胃食管反流、糖代谢异常、便秘相关疾病；便血、剧烈腹痛、呕血黑便需急诊。", "清胃散 / Qing Wei San；承气类方义需医师严辨", "口臭齿衄偏清胃散思路；便秘腹满拒按属实热时才考虑通腑，老人孕妇儿童不可自行攻下。"],
     kidneyYang: ["肾阳不足", "畏寒肢冷、小便清长、夜尿多、腰膝酸软、阳痿早泄、舌淡胖或沉弱脉提示肾阳不足、气化无力；治以温补肾阳、化气行水。", "需评估泌尿生殖系统疾病、前列腺问题、糖尿病、肾功能、内分泌和心血管因素。", "金匮肾气丸 / Jin Gui Shen Qi Wan", "腰膝冷痛、夜尿清长偏温补肾阳；水肿明显需查肾心功能；湿热尿痛时不能误补。"],
     childFood: ["小儿食积", "小儿厌食、食积、腹胀、大便酸臭或完谷不化、夜卧不安提示乳食积滞、脾胃运化失常；治以消食导滞、健脾和胃。", "儿童高热惊厥、持续呕吐腹泻、脱水、精神差、便血需立即就医；长期厌食需查营养和消化系统。", "保和丸 / Bao He Wan", "山楂、神曲、莱菔子等消食化滞；脾虚明显需健脾，不可长期过用消导。儿童剂量必须儿科医师决定。"],
-    bleeding: ["出血证待辨", "鼻衄、齿衄、便血、尿血、咯血、吐血、黑便、紫斑或月经过多提示出血类证候，需辨血热妄行、气不摄血、瘀血阻络等。", "咯血、吐血、黑便、尿血、出血不止、头晕心慌、血压异常属于高风险，优先线下急诊或专科检查。", "先止血与查因，方药需面诊辨证", "血热偏清热凉血；气虚不摄偏益气摄血；瘀血出血偏化瘀止血。此类不提供自行用方，必须先做现代医学排查。"]
+    bleeding: ["出血证待辨", "鼻衄、齿衄、便血、尿血、咯血、吐血、黑便、紫斑或月经过多提示出血类证候，需辨血热妄行、气不摄血、瘀血阻络等。", "咯血、吐血、黑便、尿血、出血不止、头晕心慌、血压异常属于高风险，优先线下急诊或专科检查。", "先止血与查因，方药需面诊辨证", "血热偏清热凉血；气虚不摄偏益气摄血；瘀血出血偏化瘀止血。此类不提供自行用方，必须先做现代医学排查。"],
+    undifferentiated: ["资料不足，暂不强行辨证", "目前症状、舌象、脉象信息不足。请至少选择主要症状，并补充寒热、汗出、饮食口味、二便、睡眠、疼痛性质、舌象和脉象。系统会再进行四诊合参。", "若有胸痛、呼吸困难、意识障碍、突发剧烈头痛、偏瘫、咯血、吐血、黑便、持续高热，应先线下就医。", "暂不推荐方剂", "资料不足时不应硬套方剂。请继续补问病程、诱因、加重缓解因素、既往史、用药史和危险信号。"]
   };
 
   const enResults = {
@@ -803,18 +858,34 @@ function analyze() {
     qi: ["Spleen-Lung Qi Deficiency", "Fatigue, shortness of breath, poor appetite, loose stool, sallow complexion, pale tongue, or weak pulse suggests Qi deficiency.", "Check anemia, thyroid disease, nutrition, chronic infection, sleep and cardiopulmonary issues.", "Si Jun Zi Tang / 四君子汤; Bu Zhong Yi Qi Tang / 补中益气汤", "Teaching only: strengthen Qi and Spleen; consider raising Yang when sinking signs exist."],
     heartSpleen: ["Heart-Spleen Deficiency", "Insomnia, vivid dreams, palpitations, forgetfulness, poor appetite, loose stool, tender tongue, or weak pulse suggests Qi-Blood insufficiency.", "Consider anxiety, circadian disruption, anemia, thyroid disease, malabsorption and chronic stress.", "Gui Pi Tang / 归脾汤", "Teaching only: tonify Qi, nourish Blood, calm the spirit."],
     yin: ["Yin Deficiency with Deficiency Heat", "Night sweating, tidal fever, five-center heat, dry throat, scant coating, or thin-rapid pulse suggests Yin deficiency with deficiency heat.", "Check thyroid dysfunction, chronic infection, perimenopause, anxiety and wasting disease.", "Tian Wang Bu Xin Dan / 天王补心丹; Zhi Bai Di Huang Wan / 知柏地黄丸", "Teaching only: nourish Yin and clear deficiency heat; safety review required."],
+    fluidDeficiency: ["Fluid Deficiency / Dryness-Heat to Differentiate", "Dry mouth, dry throat, thirst, dry stool, cracked tongue, scant coating, or dry coating suggests insufficient fluids. Differentiate excess heat damaging fluids, Yin deficiency, dryness affecting Lung, or damp-heat blocking fluid distribution.", "Consider dehydration, oral disease, diabetes, Sjogren syndrome, medication effects, fever and fluid loss.", "Zeng Ye Tang / 增液汤; Sha Shen Mai Dong Tang or Yang Yin Qing Fei Tang direction", "Do not prescribe from dry mouth alone. Constipation suggests moistening bowels; dry cough suggests nourishing Lung; bitter sticky mouth and yellow urine suggests damp-heat."],
     dampHeat: ["Damp-Heat Pattern", "Sticky bitter taste, scanty yellow urine, dysuria, sticky stool, yellow leukorrhea, scrotal dampness, itching, or jaundice suggests damp-heat.", "Rule out urinary infection, gynecologic/urologic infection, hepatobiliary disease, enteritis, skin infection/allergy.", "Long Dan Xie Gan Tang / 龙胆泻肝汤; modified Ping Wei San / 平胃散", "Teaching only: clear heat and drain dampness; bitter-cold herbs need caution."],
     phlegmDamp: ["Phlegm-Damp Obstruction", "Heavy head, abundant phlegm, chest oppression, nausea, poor appetite, somnolence, and greasy coating suggest phlegm-damp obstruction.", "Consider respiratory disease, reflux, metabolic syndrome, sleep apnea.", "Er Chen Tang / 二陈汤; Liu Jun Zi Tang / 六君子汤", "Teaching only: dry dampness, transform phlegm, regulate Qi and strengthen Spleen."],
     bloodStasis: ["Blood Stasis Pattern", "Fixed stabbing pain, dark complexion, menstrual clots, purpura, dark tongue, or choppy pulse suggests impaired blood movement.", "Chest pain, neurologic symptoms, hemoptysis/melena, trauma, pregnancy, anticoagulant use require priority medical assessment.", "Xue Fu Zhu Yu Tang / 血府逐瘀汤", "Teaching only: invigorate blood and move Qi after contraindication review."],
     stomachHeat: ["Stomach Heat / Intestinal Heat", "Bad breath, gum bleeding, rapid hunger, preference for cold drinks, dry stool, constipation, thirst and rapid pulse suggest Stomach/GI heat.", "Rule out dental disease, reflux, diabetes/metabolic disease and dangerous GI bleeding.", "Qing Wei San / 清胃散; purgative formulas only under clinician supervision", "Teaching only: clear Stomach heat and harmonize bowels; do not self-purge."],
     kidneyYang: ["Kidney Yang Deficiency", "Cold limbs, clear profuse urine, nocturia, low back/knee weakness, impotence, pale swollen tongue, or deep-weak pulse suggests Kidney Yang deficiency.", "Assess urinary/prostate disease, diabetes, kidney function, endocrine and cardiovascular factors.", "Jin Gui Shen Qi Wan / 金匮肾气丸", "Teaching only: warm and tonify Kidney Yang; avoid tonification when damp-heat dysuria is present."],
     childFood: ["Pediatric Food Stagnation", "Pediatric anorexia, food stagnation, abdominal distension, sour stool, undigested food, or restless sleep suggests food accumulation.", "High fever convulsion, dehydration, persistent vomiting/diarrhea, blood in stool or lethargy needs urgent care.", "Bao He Wan / 保和丸", "Teaching only: reduce food stagnation and support Spleen; pediatric dosing requires clinician judgment."],
-    bleeding: ["Bleeding Pattern Requiring Differentiation", "Epistaxis, gum bleeding, hematuria, hematemesis, melena, hemoptysis, purpura, or heavy menses needs differentiation of blood heat, Qi failing to contain blood, or stasis.", "Hemoptysis, hematemesis, melena, hematuria, prolonged bleeding, dizziness, palpitations or abnormal blood pressure are high risk.", "Stop bleeding and investigate cause first", "No self-prescribed formula. Modern medical evaluation comes first."]
+    bleeding: ["Bleeding Pattern Requiring Differentiation", "Epistaxis, gum bleeding, hematuria, hematemesis, melena, hemoptysis, purpura, or heavy menses needs differentiation of blood heat, Qi failing to contain blood, or stasis.", "Hemoptysis, hematemesis, melena, hematuria, prolonged bleeding, dizziness, palpitations or abnormal blood pressure are high risk.", "Stop bleeding and investigate cause first", "No self-prescribed formula. Modern medical evaluation comes first."],
+    undifferentiated: ["Insufficient data", "There is not enough symptom, tongue, and pulse information. Add chief symptoms, cold/heat, sweating, appetite/taste, stool/urine, sleep, pain quality, tongue and pulse.", "Red flags such as chest pain, dyspnea, neurologic deficit, severe sudden headache, bleeding or persistent high fever need urgent care.", "No formula recommendation yet", "Do not force a formula when data are insufficient."]
   };
 
   const data = state.lang === "zh" ? zhResults[profile] : enResults[profile];
+  const compatible = ranked
+    .filter(([key, value]) => key !== profile && key !== "undifferentiated" && value > 0)
+    .slice(0, 3)
+    .map(([key]) => (state.lang === "zh" ? zhResults[key]?.[0] : enResults[key]?.[0]))
+    .filter(Boolean);
+  const evidenceText = evidence.length
+    ? evidence.slice(0, 5).join("；")
+    : (state.lang === "zh" ? "暂无充分四诊证据，请继续补充问诊信息" : "Insufficient four-diagnostic evidence; add more intake details");
+  const intakeText = state.lang === "zh"
+    ? `已选症状：${selectedLabels.join("、") || "未选择"}；舌象：${tongueText}；脉象：${pulseText}。`
+    : `Selected symptoms: ${selectedLabels.map((label) => symptomOptions.find((item) => item.zh === label)?.en || label).join(", ") || "None"}; tongue: ${tongueText}; pulse: ${pulseText}.`;
+  const compatibleText = compatible.length
+    ? (state.lang === "zh" ? `兼夹/需鉴别：${compatible.join("、")}。` : `Concurrent patterns to differentiate: ${compatible.join(", ")}.`)
+    : "";
   document.querySelector("#tcmDiagnosis").textContent = data[0];
-  document.querySelector("#pathogenesis").textContent = data[1];
+  document.querySelector("#pathogenesis").textContent = `${intakeText} ${data[1]} 四诊依据：${evidenceText}。${compatibleText}`;
   document.querySelector("#westernDiagnosis").textContent = data[2];
   document.querySelector("#riskText").textContent = hasAny("chestPain", "hemoptysis", "hematemesis", "melena", "prolongedBleeding", "febrileConvulsion", "urinaryRetention")
     ? state.lang === "zh"
@@ -839,9 +910,13 @@ function analyze() {
     stomachHeat: 0.78,
     kidneyYang: 0.79,
     childFood: 0.77,
-    bleeding: 0.72
+    bleeding: 0.72,
+    fluidDeficiency: 0.76,
+    undifferentiated: 0.50
   };
-  const confidence = confidenceMap[profile] || 0.76;
+  const topScore = ranked[0]?.[1] || 0;
+  const secondScore = ranked[1]?.[1] || 0;
+  const confidence = Math.max(0.5, Math.min(confidenceMap[profile] || 0.76, 0.62 + topScore * 0.035 + Math.max(0, topScore - secondScore) * 0.015));
   document.querySelector("#confidenceBadge").textContent = confidence.toFixed(2);
   document.querySelector("#retrievalScore").textContent = (confidence + 0.04).toFixed(2);
   document.querySelector("#consistencyScore").textContent = (confidence + 0.01).toFixed(2);
@@ -856,8 +931,8 @@ async function requestHuggingFaceDiagnosis() {
   const selectedLabels = symptomOptions
     .filter((item) => state.selectedSymptoms.has(item.id))
     .map((item) => item.zh);
-  const tongueText = document.querySelector("#tongueSelect").selectedOptions[0]?.textContent?.split("/")[0]?.trim() || "舌红";
-  const pulseText = document.querySelector("#pulseSelect").selectedOptions[0]?.textContent?.split("/")[0]?.trim() || "弦脉";
+  const tongueText = document.querySelector("#tongueSelect").selectedOptions[0]?.textContent?.split("/")[0]?.trim() || "未选择";
+  const pulseText = document.querySelector("#pulseSelect").selectedOptions[0]?.textContent?.split("/")[0]?.trim() || "未选择";
   const freeText = document.querySelector("#freeText").value || "";
 
   const sentSummary = state.lang === "zh"
@@ -1800,7 +1875,7 @@ function resetDemoData() {
 function renderGraph(profile = "liver") {
   const canvas = document.querySelector("#graphCanvas");
   canvas.innerHTML = "";
-  const nodes = graphSets[profile];
+  const nodes = graphSets[profile] || graphSets.undifferentiated || graphSets.heartSpleen;
   const edges = [[0, 2], [1, 2], [2, 3]];
 
   edges.forEach(([from, to]) => {

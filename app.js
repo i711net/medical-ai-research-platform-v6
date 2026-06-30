@@ -1105,6 +1105,14 @@ async function signIn() {
       days_remaining: profile.days_remaining
     };
     state.role = profile.role;
+    if (profile.role === "admin") {
+      sessionStorage.setItem("medical-ai-v6-admin-session", JSON.stringify({
+        login_name: profile.login_name,
+        display_name: profile.display_name,
+        role: profile.role,
+        password
+      }));
+    }
     addAudit(`账号登录：${profile.login_name}`);
     renderRole();
     renderDatabase();
@@ -1136,6 +1144,7 @@ async function signOut() {
   state.authUser = null;
   state.profile = null;
   state.currentPassword = "";
+  sessionStorage.removeItem("medical-ai-v6-admin-session");
   addAudit("账号退出");
   renderRole();
   renderDatabase();

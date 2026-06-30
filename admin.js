@@ -19,7 +19,36 @@ function requireAdmin() {
   const ok = state.profile?.role === "admin";
   document.body.classList.toggle("admin-mode", ok);
   document.querySelector("#adminDashboard").classList.toggle("locked", !ok);
+  document.querySelector(".top-login")?.classList.toggle("hidden-panel", ok);
   return ok;
+}
+
+async function restoreAdminSession() {
+  const raw = sessionStorage.getItem("medical-ai-v6-admin-session");
+  if (!raw) {
+    requireAdmin();
+    return;
+  }
+  try {
+    const session = JSON.parse(raw);
+    if (session.role !== "admin" || !session.login_name || !session.password) {
+      sessionStorage.removeItem("medical-ai-v6-admin-session");
+      requireAdmin();
+      return;
+    }
+    state.profile = {
+      login_name: session.login_name,
+      display_name: session.display_name,
+      role: session.role
+    };
+    state.password = session.password;
+    setStatus(`管理员已登录：${session.display_name || session.login_name}`);
+    requireAdmin();
+    await loadDatabase();
+  } catch {
+    sessionStorage.removeItem("medical-ai-v6-admin-session");
+    requireAdmin();
+  }
 }
 
 async function login() {
@@ -44,6 +73,12 @@ async function login() {
   }
   state.profile = profile;
   state.password = password;
+  sessionStorage.setItem("medical-ai-v6-admin-session", JSON.stringify({
+    login_name: profile.login_name,
+    display_name: profile.display_name,
+    role: profile.role,
+    password
+  }));
   setStatus(`管理员已登录：${profile.display_name || profile.login_name}`);
   requireAdmin();
   await loadDatabase();
@@ -52,6 +87,7 @@ async function login() {
 function logout() {
   state.profile = null;
   state.password = "";
+  sessionStorage.removeItem("medical-ai-v6-admin-session");
   setStatus("请使用管理员账号登录后台");
   requireAdmin();
 }
@@ -169,4 +205,4 @@ document.querySelector("#resetButton").addEventListener("click", () => {
   document.querySelector("#databasePreview").value = "";
 });
 
-requireAdmin();
+restoreAdminSession();

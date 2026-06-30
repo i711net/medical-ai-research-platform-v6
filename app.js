@@ -16,6 +16,8 @@ const state = {
   }
 };
 
+const LOCAL_OLLAMA_URLS = ["http://127.0.0.1:11434", "http://localhost:11434"];
+
 const copy = {
   zh: {
     tagline: "中医 + 西医 + GraphRAG + 舌诊 + 双语论文演示系统",
@@ -503,21 +505,28 @@ async function requestHuggingFaceDiagnosis() {
   }
 }
 
-async function requestLocalOllamaDiagnosis({ selectedLabels, tongueText, pulseText, freeText }) {
-  const baseUrl = "http://127.0.0.1:11434";
-  const timeoutMs = 30000;
-  const withTimeout = async (url, options = {}, timeout = timeoutMs) => {
+async function fetchLocalOllama(path, options = {}, timeout = 30000) {
+  let lastError;
+  for (const baseUrl of LOCAL_OLLAMA_URLS) {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeout);
     try {
-      return await fetch(url, { ...options, signal: controller.signal });
+      const response = await fetch(`${baseUrl}${path}`, { ...options, signal: controller.signal });
+      return { response, baseUrl };
+    } catch (error) {
+      lastError = error;
     } finally {
       clearTimeout(timer);
     }
-  };
+  }
+  throw lastError || new Error("Local Ollama is unavailable");
+}
+
+async function requestLocalOllamaDiagnosis({ selectedLabels, tongueText, pulseText, freeText }) {
+  const timeoutMs = 30000;
 
   try {
-    const tagsResponse = await withTimeout(`${baseUrl}/api/tags`, {}, 2500);
+    const { response: tagsResponse } = await fetchLocalOllama("/api/tags", {}, 2500);
     if (!tagsResponse.ok) throw new Error(`Ollama tags HTTP ${tagsResponse.status}`);
     const tags = await tagsResponse.json();
     const models = Array.isArray(tags.models) ? tags.models : [];
@@ -531,7 +540,7 @@ async function requestLocalOllamaDiagnosis({ selectedLabels, tongueText, pulseTe
     const preferred = models.find((item) => /tcm|deepseek|qwen|yi|llama|gemma|mistral/i.test(item.name)) || models[0];
     const modelName = preferred.name;
     const prompt = buildMedicalPrompt(selectedLabels, tongueText, pulseText, freeText);
-    const chatResponse = await withTimeout(`${baseUrl}/api/chat`, {
+    const { response: chatResponse } = await fetchLocalOllama("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -624,11 +633,8 @@ async function detectLocalAi() {
     ? "请连接本机 Ollama 模型；连接成功后这里会显示已连接。"
     : "Connect a local Ollama model; this area will show connected when ready.";
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 2500);
   try {
-    const response = await fetch("http://127.0.0.1:11434/api/tags", { signal: controller.signal });
-    clearTimeout(timer);
+    const { response, baseUrl } = await fetchLocalOllama("/api/tags", {}, 2500);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     const models = Array.isArray(data.models) ? data.models : [];
@@ -645,15 +651,14 @@ async function detectLocalAi() {
     panel.classList.add("ready");
     title.textContent = state.lang === "zh" ? "本地 AI 模型：已连接" : "Local AI model: connected";
     status.textContent = state.lang === "zh"
-      ? `已检测到 Ollama 模型：${names}。生成 AI 推理时会优先使用本机模型。`
-      : `Detected Ollama models: ${names}. AI reasoning will use local models first.`;
+      ? `已通过 ${baseUrl} 检测到 Ollama 模型：${names}。生成 AI 推理时会优先使用本机模型。`
+      : `Detected Ollama models through ${baseUrl}: ${names}. AI reasoning will use local models first.`;
   } catch (error) {
-    clearTimeout(timer);
     panel.classList.add("error");
     title.textContent = state.lang === "zh" ? "本地 AI 模型：未连接" : "Local AI model: not connected";
     status.textContent = state.lang === "zh"
-      ? "请在本机安装并启动 Ollama，再添加模型。准备好后点“重新检测”，本网站会自动显示已连接。"
-      : "Install and start Ollama locally, then add a model. Click Check again when ready.";
+      ? "Ollama 可能已启动，但浏览器访问被拦截。请允许本网站访问本机 Ollama，或重启 Ollama 后再点“重新检测”。"
+      : "Ollama may be running, but browser access is blocked. Allow this site to access local Ollama, then check again.";
   }
 }
 
@@ -691,7 +696,7 @@ async function testLocalAiModel() {
   status.textContent = "正在向本机 Ollama 发送一个短测试请求。";
 
   try {
-    const tagsResponse = await fetch("http://127.0.0.1:11434/api/tags");
+    const { response: tagsResponse, baseUrl } = await fetchLocalOllama("/api/tags", {}, 3000);
     if (!tagsResponse.ok) throw new Error(`Ollama 服务返回 HTTP ${tagsResponse.status}`);
     const tags = await tagsResponse.json();
     const models = Array.isArray(tags.models) ? tags.models : [];
@@ -703,12 +708,9 @@ async function testLocalAiModel() {
     }
 
     const modelName = (models.find((item) => /tcm|deepseek|qwen|yi|llama|gemma|mistral/i.test(item.name)) || models[0]).name;
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 20000);
-    const chatResponse = await fetch("http://127.0.0.1:11434/api/chat", {
+    const { response: chatResponse } = await fetchLocalOllama("/api/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      signal: controller.signal,
       body: JSON.stringify({
         model: modelName,
         stream: false,
@@ -717,8 +719,7 @@ async function testLocalAiModel() {
           { role: "user", content: "请用一句中文回答：本地医学AI模型连接测试成功。" }
         ]
       })
-    });
-    clearTimeout(timer);
+    }, 20000);
 
     const rawText = await chatResponse.text();
     let data;
@@ -731,11 +732,11 @@ async function testLocalAiModel() {
 
     panel.classList.add("ready");
     title.textContent = "本地 AI 模型：测试成功";
-    status.textContent = `已连接并测试模型：${modelName}。返回：${data.message?.content || data.response || "测试成功"}`;
+    status.textContent = `已通过 ${baseUrl} 连接并测试模型：${modelName}。返回：${data.message?.content || data.response || "测试成功"}`;
   } catch (error) {
     panel.classList.add("error");
     title.textContent = "本地 AI 模型：测试失败";
-    status.textContent = `没有完成本机模型测试：${error.message || error}。请确认 Ollama 已启动，并允许本网站访问本机 Ollama。`;
+    status.textContent = `没有完成本机模型测试：${error.message || error}。如果 Ollama 已启动，请设置 OLLAMA_ORIGINS 允许本网站，然后完全退出并重启 Ollama。`;
   }
 }
 
@@ -748,7 +749,7 @@ function showLocalAiHelp() {
   panel.classList.remove("ready", "warning", "error");
   panel.classList.add("warning");
   title.textContent = "本地 AI 模型：连接说明";
-  status.textContent = "连接顺序：1. 先打开电脑里的 Ollama 程序；2. 在 Ollama 里添加模型，或把 GGUF 注册成本地模型；3. 回本网页点“重新检测”；4. 显示已连接后点“测试本地模型”；5. 测试成功后再生成 AI 推理。网页不能直接启动电脑程序。";
+  status.textContent = "连接顺序：1. 先打开电脑里的 Ollama 程序；2. 在 Ollama 里添加模型；3. 如果网页测试 Failed to fetch，请设置 OLLAMA_ORIGINS=https://medical-ai-research-platform-v6.vercel.app 后完全退出并重启 Ollama；4. 回本网页点“重新检测”和“测试本地模型”。";
 }
 
 async function initSupabase() {

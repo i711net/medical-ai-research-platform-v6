@@ -18,7 +18,7 @@ export default async function handler(req, res) {
           payload.pulse || "弦脉",
           payload.freeText || "",
           payload.language || "中文",
-          payload.maxTokens || 1024,
+          payload.maxTokens || 384,
           payload.temperature ?? 0.2,
         ],
       }),

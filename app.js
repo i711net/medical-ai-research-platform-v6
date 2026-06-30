@@ -413,7 +413,7 @@ async function requestHuggingFaceDiagnosis() {
         pulse: pulseText,
         freeText,
         language: state.lang === "zh" ? "中文" : "English",
-        maxTokens: 1024,
+        maxTokens: 384,
         temperature: 0.2
       })
     });

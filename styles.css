@@ -212,6 +212,10 @@ textarea {
   display: none !important;
 }
 
+.legacy-quick-panel {
+  display: none;
+}
+
 .admin-dashboard {
   display: grid;
   grid-template-columns: repeat(2, minmax(320px, 1fr));
@@ -703,6 +707,176 @@ meter {
   min-height: 270px;
 }
 
+.admin-full {
+  grid-column: 1 / -1;
+  min-height: 620px;
+}
+
+.admin-db-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.admin-db-tabs button {
+  min-height: 32px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.admin-db-tabs button.active {
+  background: white;
+  border-color: var(--line);
+  color: var(--text);
+  box-shadow: 0 4px 12px rgba(40, 54, 80, 0.08);
+}
+
+.admin-db-toolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto auto;
+  gap: 8px;
+  align-items: center;
+  margin: 10px 0;
+}
+
+.admin-db-toolbar span {
+  color: var(--muted);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.admin-db-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.82fr) minmax(420px, 1.18fr);
+  gap: 12px;
+  min-height: 480px;
+}
+
+.admin-db-list,
+.admin-db-editor {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
+}
+
+.admin-db-list {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  max-height: 560px;
+  overflow: auto;
+  padding: 8px;
+}
+
+.admin-db-row {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: white;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.admin-db-row.active {
+  border-color: #0d9488;
+  background: #ecfdf5;
+}
+
+.admin-db-row strong {
+  font-size: 14px;
+  color: var(--text);
+}
+
+.admin-db-row span,
+.admin-db-row em {
+  font-size: 12px;
+  color: var(--muted);
+  font-style: normal;
+  line-height: 1.35;
+}
+
+.admin-db-row em {
+  color: var(--red);
+}
+
+.admin-db-empty,
+.empty-editor {
+  color: var(--muted);
+  padding: 18px;
+  line-height: 1.6;
+}
+
+.admin-db-editor {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  max-height: 560px;
+  overflow: auto;
+  padding: 12px;
+}
+
+.editor-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.editor-heading span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.admin-edit-field {
+  display: grid;
+  gap: 5px;
+}
+
+.admin-edit-field span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-edit-field textarea {
+  min-height: 92px;
+}
+
+.checkbox-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkbox-field input {
+  width: 18px;
+  min-height: 18px;
+}
+
+.editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  position: sticky;
+  bottom: -12px;
+  background: var(--panel-soft);
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
 .database-panel {
   grid-column: span 2;
 }
@@ -989,6 +1163,10 @@ textarea:disabled {
   .workspace,
   .lower-grid,
   .operations-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-db-layout {
     grid-template-columns: 1fr;
   }
 

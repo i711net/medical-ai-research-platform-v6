@@ -31,6 +31,40 @@
       <div class="session-strip" id="authStatus">请使用管理员账号登录后台</div>
 
       <main class="admin-dashboard" id="adminDashboard">
+        <section class="panel ops-panel admin-full">
+          <div class="panel-heading compact">
+            <div>
+              <h2>数据库可视化管理</h2>
+              <p>后台直接读取 Supabase 数据库。可搜索、选择、修改、新增、停用/启用知识库内容。</p>
+            </div>
+            <button class="ghost-button" id="refreshDataButton" type="button">刷新</button>
+          </div>
+
+          <div class="admin-db-tabs" id="adminDbTabs">
+            <button type="button" data-table="diagnostic_terms" class="active">症状/舌脉</button>
+            <button type="button" data-table="formulas">方剂</button>
+            <button type="button" data-table="herbs">中药材</button>
+            <button type="button" data-table="learning_resources">学习资料</button>
+            <button type="button" data-table="app_users">人员账号</button>
+            <button type="button" data-table="outpatient_visits">挂号</button>
+            <button type="button" data-table="medical_records">病例</button>
+            <button type="button" data-table="admin_audit_logs">审计</button>
+          </div>
+
+          <div class="admin-db-toolbar">
+            <input id="adminDbSearch" type="search" placeholder="搜索当前区域全部字段" />
+            <button class="ghost-button" id="newDbRecordButton" type="button">新增</button>
+            <span id="adminDbCount">0 条</span>
+          </div>
+
+          <div class="admin-db-layout">
+            <div class="admin-db-list" id="adminDbList"></div>
+            <form class="admin-db-editor" id="adminDbEditor">
+              <div class="empty-editor">请选择左侧一条数据，或点击“新增”。</div>
+            </form>
+          </div>
+        </section>
+
         <section class="panel ops-panel">
           <div class="panel-heading compact">
             <div>
@@ -104,7 +138,7 @@
           <div class="panel-heading compact">
             <div>
               <h2>学习资料管理</h2>
-              <p>先保存链接和文字资料；大文件下一步接 Supabase Storage 上传、压缩和预览。</p>
+              <p>快速新增学习资料；完整编辑请用上方“数据库可视化管理”。</p>
             </div>
           </div>
           <div class="stack">
@@ -115,7 +149,7 @@
           </div>
         </section>
 
-        <section class="panel ops-panel">
+        <section class="panel ops-panel legacy-quick-panel">
           <div class="panel-heading compact">
             <div>
               <h2>症状 / 舌象 / 脉象管理</h2>
@@ -134,7 +168,7 @@
           </div>
         </section>
 
-        <section class="panel ops-panel">
+        <section class="panel ops-panel legacy-quick-panel">
           <div class="panel-heading compact">
             <div>
               <h2>方剂 / 中药知识库</h2>

@@ -8,7 +8,141 @@ const supabase = config.url?.startsWith("https://") && config.anonKey?.length > 
 const state = {
   profile: null,
   password: "",
+  activeTable: "diagnostic_terms",
+  selectedRecord: null,
+  tableRows: [],
   db: { visits: [], records: [], audit: [] }
+};
+
+const tableConfigs = {
+  diagnostic_terms: {
+    title: "症状 / 舌象 / 脉象",
+    editable: true,
+    order: "sort_order",
+    fields: [
+      ["category", "分类", "select", ["symptom", "tongue", "pulse", "pattern", "risk"]],
+      ["parent_slug", "上级分类/区域", "text"],
+      ["slug", "唯一标识", "text", { required: true }],
+      ["label_cn", "中文名称", "text", { required: true }],
+      ["label_en", "英文名称", "text"],
+      ["description", "说明/辨证意义", "textarea"],
+      ["sort_order", "排序", "number"],
+      ["is_active", "启用", "checkbox"]
+    ],
+    display: (row) => row.label_cn || row.slug,
+    sub: (row) => `${row.category || ""} · ${row.slug || ""}`
+  },
+  formulas: {
+    title: "方剂知识库",
+    editable: true,
+    order: "name_cn",
+    fields: [
+      ["name_cn", "方剂名", "text", { required: true }],
+      ["name_en", "英文名", "text"],
+      ["source", "出处", "text"],
+      ["composition", "组成", "textarea"],
+      ["dosage", "剂量说明", "textarea"],
+      ["usage", "用法/治法", "textarea"],
+      ["indications", "适用范围/主治", "textarea"],
+      ["modifications", "加减应用", "textarea"],
+      ["modern_notes", "现代说明/安全提醒", "textarea"],
+      ["is_active", "启用", "checkbox"]
+    ],
+    display: (row) => row.name_cn,
+    sub: (row) => row.source || row.name_en || ""
+  },
+  herbs: {
+    title: "中药材知识库",
+    editable: true,
+    order: "name_cn",
+    fields: [
+      ["name_cn", "药材名", "text", { required: true }],
+      ["name_en", "英文/别名", "text"],
+      ["nature_flavor", "性味", "text"],
+      ["meridians", "归经", "text"],
+      ["functions", "功效", "textarea"],
+      ["dosage", "用法用量", "textarea"],
+      ["cautions", "禁忌/安全提醒", "textarea"],
+      ["modern_notes", "现代应用/研究方向", "textarea"],
+      ["is_active", "启用", "checkbox"]
+    ],
+    display: (row) => row.name_cn,
+    sub: (row) => row.functions || row.nature_flavor || ""
+  },
+  learning_resources: {
+    title: "医学学习资料",
+    editable: true,
+    order: "sort_order",
+    fields: [
+      ["title", "资料标题", "text", { required: true }],
+      ["type", "类型", "select", ["link", "pdf", "video", "audio", "text", "image", "office"]],
+      ["url", "链接/文件地址", "text"],
+      ["description", "说明", "textarea"],
+      ["sort_order", "排序", "number"],
+      ["is_active", "启用", "checkbox"]
+    ],
+    display: (row) => row.title,
+    sub: (row) => `${row.type || ""} · ${row.url || ""}`
+  },
+  app_users: {
+    title: "人员账号",
+    editable: false,
+    order: "created_at",
+    fields: [
+      ["login_name", "登录名", "text"],
+      ["display_name", "姓名", "text"],
+      ["role", "角色", "text"],
+      ["expires_at", "到期时间", "text"],
+      ["is_active", "启用", "checkbox"],
+      ["created_at", "创建时间", "text"]
+    ],
+    select: "id, login_name, display_name, role, expires_at, is_active, created_at",
+    display: (row) => row.login_name,
+    sub: (row) => `${row.display_name || ""} · ${row.role || ""}`
+  },
+  outpatient_visits: {
+    title: "门诊挂号",
+    editable: false,
+    order: "created_at",
+    fields: [
+      ["visit_no", "挂号号", "text"],
+      ["department", "科室", "text"],
+      ["doctor_name", "医生", "text"],
+      ["chief_complaint", "主诉", "textarea"],
+      ["status", "状态", "text"],
+      ["risk_level", "风险", "text"],
+      ["created_at", "创建时间", "text"]
+    ],
+    select: "id, visit_no, department, doctor_name, chief_complaint, status, risk_level, created_at, patients(name, age)",
+    display: (row) => row.visit_no || row.patients?.name || row.id,
+    sub: (row) => `${row.patients?.name || ""} · ${row.department || ""} · ${row.status || ""}`
+  },
+  medical_records: {
+    title: "病例记录",
+    editable: false,
+    order: "created_at",
+    fields: [
+      ["tcm_diagnosis", "中医诊断", "text"],
+      ["western_diagnosis", "西医分析", "textarea"],
+      ["formula", "方剂", "textarea"],
+      ["risk_level", "风险", "text"],
+      ["created_at", "创建时间", "text"]
+    ],
+    display: (row) => row.tcm_diagnosis || row.id,
+    sub: (row) => `${row.formula || ""} · ${row.risk_level || ""}`
+  },
+  admin_audit_logs: {
+    title: "审计记录",
+    editable: false,
+    order: "created_at",
+    fields: [
+      ["action", "动作", "text"],
+      ["payload", "内容", "json"],
+      ["created_at", "时间", "text"]
+    ],
+    display: (row) => row.action,
+    sub: (row) => row.created_at || ""
+  }
 };
 
 function setStatus(text) {
@@ -27,6 +161,7 @@ async function restoreAdminSession() {
   const raw = sessionStorage.getItem("medical-ai-v6-admin-session");
   if (!raw) {
     requireAdmin();
+    renderAdminManager();
     return;
   }
   try {
@@ -34,6 +169,7 @@ async function restoreAdminSession() {
     if (session.role !== "admin" || !session.login_name || !session.password) {
       sessionStorage.removeItem("medical-ai-v6-admin-session");
       requireAdmin();
+      renderAdminManager();
       return;
     }
     state.profile = {
@@ -44,10 +180,11 @@ async function restoreAdminSession() {
     state.password = session.password;
     setStatus(`管理员已登录：${session.display_name || session.login_name}`);
     requireAdmin();
-    await loadDatabase();
+    await Promise.all([loadDatabase(), loadActiveTable()]);
   } catch {
     sessionStorage.removeItem("medical-ai-v6-admin-session");
     requireAdmin();
+    renderAdminManager();
   }
 }
 
@@ -81,15 +218,18 @@ async function login() {
   }));
   setStatus(`管理员已登录：${profile.display_name || profile.login_name}`);
   requireAdmin();
-  await loadDatabase();
+  await Promise.all([loadDatabase(), loadActiveTable()]);
 }
 
 function logout() {
   state.profile = null;
   state.password = "";
+  state.tableRows = [];
+  state.selectedRecord = null;
   sessionStorage.removeItem("medical-ai-v6-admin-session");
   setStatus("请使用管理员账号登录后台");
   requireAdmin();
+  renderAdminManager();
 }
 
 async function createStaff() {
@@ -108,7 +248,7 @@ async function createStaff() {
     return;
   }
   alert("人员账号已保存");
-  await loadDatabase();
+  await Promise.all([loadDatabase(), reloadIfTable("app_users")]);
 }
 
 async function deleteStaff() {
@@ -125,7 +265,7 @@ async function deleteStaff() {
     return;
   }
   alert("人员账号已停用");
-  await loadDatabase();
+  await Promise.all([loadDatabase(), reloadIfTable("app_users")]);
 }
 
 async function loadDatabase() {
@@ -146,7 +286,233 @@ function renderDatabase() {
   document.querySelector("#recordCount").textContent = String(state.db.records.length);
   document.querySelector("#riskCount").textContent = String(state.db.visits.filter((v) => v.risk_level === "high").length);
   document.querySelector("#auditLog").innerHTML = state.db.audit.map((item) => `<div>${item.created_at} ${item.action}</div>`).join("");
-  document.querySelector("#databasePreview").value = JSON.stringify(state.db, null, 2);
+  document.querySelector("#databasePreview").value = JSON.stringify({
+    当前编辑区: state.activeTable,
+    当前编辑区数据: state.tableRows,
+    统计预览: state.db
+  }, null, 2);
+}
+
+async function loadActiveTable() {
+  if (!requireAdmin() || !supabase) {
+    renderAdminManager();
+    return;
+  }
+  const config = tableConfigs[state.activeTable];
+  const select = config.select || "*";
+  let query = supabase.from(state.activeTable).select(select);
+  if (config.order) query = query.order(config.order, { ascending: config.order !== "created_at" });
+  if (config.order !== "created_at" && config.fields.some(([field]) => field === "created_at")) {
+    query = query.order("created_at", { ascending: false });
+  }
+  const { data, error } = await query.limit(1000);
+  if (error) {
+    state.tableRows = [];
+    state.selectedRecord = null;
+    renderAdminManager(error.message);
+    return;
+  }
+  state.tableRows = data || [];
+  state.selectedRecord = null;
+  renderAdminManager();
+  renderDatabase();
+}
+
+async function reloadIfTable(table) {
+  if (state.activeTable === table) await loadActiveTable();
+}
+
+function getFilteredRows() {
+  const keyword = document.querySelector("#adminDbSearch")?.value.trim().toLowerCase() || "";
+  if (!keyword) return state.tableRows;
+  return state.tableRows.filter((row) => JSON.stringify(row).toLowerCase().includes(keyword));
+}
+
+function renderAdminManager(errorText = "") {
+  renderTabs();
+  renderToolbar();
+  renderList(errorText);
+  renderEditor();
+}
+
+function renderToolbar() {
+  const config = tableConfigs[state.activeTable];
+  const newButton = document.querySelector("#newDbRecordButton");
+  if (newButton) {
+    newButton.disabled = !config.editable || !requireAdmin();
+    newButton.textContent = config.editable ? "新增" : "只读";
+  }
+}
+
+function renderTabs() {
+  document.querySelectorAll("#adminDbTabs [data-table]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.table === state.activeTable);
+  });
+}
+
+function renderList(errorText = "") {
+  const list = document.querySelector("#adminDbList");
+  const count = document.querySelector("#adminDbCount");
+  if (!list || !count) return;
+  const config = tableConfigs[state.activeTable];
+  const rows = getFilteredRows();
+  count.textContent = errorText ? "读取失败" : `${rows.length} / ${state.tableRows.length} 条`;
+  if (errorText) {
+    list.innerHTML = `<div class="admin-db-empty">读取数据库失败：${escapeHtml(errorText)}</div>`;
+    return;
+  }
+  if (!requireAdmin()) {
+    list.innerHTML = `<div class="admin-db-empty">登录管理员账号后显示数据库内容。</div>`;
+    return;
+  }
+  if (!rows.length) {
+    list.innerHTML = `<div class="admin-db-empty">当前区域没有数据，或搜索无结果。</div>`;
+    return;
+  }
+  list.innerHTML = rows.map((row) => `
+    <button class="admin-db-row ${state.selectedRecord?.id === row.id ? "active" : ""}" type="button" data-id="${row.id || ""}">
+      <strong>${escapeHtml(config.display(row) || "未命名")}</strong>
+      <span>${escapeHtml(config.sub(row) || "")}</span>
+      ${row.is_active === false ? "<em>已停用</em>" : ""}
+    </button>
+  `).join("");
+  list.querySelectorAll("[data-id]").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.selectedRecord = state.tableRows.find((row) => String(row.id) === button.dataset.id) || null;
+      renderAdminManager();
+    });
+  });
+}
+
+function renderEditor() {
+  const editor = document.querySelector("#adminDbEditor");
+  if (!editor) return;
+  const config = tableConfigs[state.activeTable];
+  const record = state.selectedRecord;
+  if (!requireAdmin()) {
+    editor.innerHTML = `<div class="empty-editor">请先登录管理员账号。</div>`;
+    return;
+  }
+  if (!record) {
+    editor.innerHTML = `<div class="empty-editor">请选择左侧一条 ${config.title} 数据，或点击“新增”。</div>`;
+    return;
+  }
+  const readonly = !config.editable;
+  editor.innerHTML = `
+    <div class="editor-heading">
+      <strong>${escapeHtml(config.title)}</strong>
+      <span>${readonly ? "只读查看" : record.id ? "编辑数据库记录" : "新增数据库记录"}</span>
+    </div>
+    ${config.fields.map(([field, label, type, extra]) => renderField(field, label, type, extra, record, readonly)).join("")}
+    <div class="editor-actions">
+      ${readonly ? "" : `<button class="primary-button" id="saveDbRecordButton" type="submit">保存修改</button>`}
+      ${readonly || !record.id || !("is_active" in record) ? "" : `<button class="ghost-button" id="toggleActiveButton" type="button">${record.is_active === false ? "启用" : "停用"}</button>`}
+    </div>
+  `;
+  if (!readonly) {
+    editor.querySelector("#toggleActiveButton")?.addEventListener("click", toggleActiveRecord);
+  }
+}
+
+function renderField(field, label, type, extra, record, readonly) {
+  const value = record[field];
+  const disabled = readonly ? "disabled" : "";
+  const required = extra?.required ? "required" : "";
+  if (type === "textarea") {
+    return `<label class="admin-edit-field"><span>${label}</span><textarea data-field="${field}" rows="4" ${disabled} ${required}>${escapeHtml(value || "")}</textarea></label>`;
+  }
+  if (type === "select") {
+    const options = (Array.isArray(extra) ? extra : []).map((item) => `<option value="${item}" ${value === item ? "selected" : ""}>${item}</option>`).join("");
+    return `<label class="admin-edit-field"><span>${label}</span><select data-field="${field}" ${disabled} ${required}>${options}</select></label>`;
+  }
+  if (type === "checkbox") {
+    return `<label class="admin-edit-field checkbox-field"><input data-field="${field}" type="checkbox" ${value !== false ? "checked" : ""} ${disabled} /><span>${label}</span></label>`;
+  }
+  if (type === "json") {
+    return `<label class="admin-edit-field"><span>${label}</span><textarea rows="6" disabled>${escapeHtml(JSON.stringify(value || {}, null, 2))}</textarea></label>`;
+  }
+  return `<label class="admin-edit-field"><span>${label}</span><input data-field="${field}" type="${type || "text"}" value="${escapeHtml(value ?? "")}" ${disabled} ${required} /></label>`;
+}
+
+function createBlankRecord() {
+  const config = tableConfigs[state.activeTable];
+  if (!config.editable) return;
+  const record = {};
+  config.fields.forEach(([field, _label, type]) => {
+    if (field === "is_active") record[field] = true;
+    else if (field === "sort_order") record[field] = 100;
+    else if (type === "checkbox") record[field] = false;
+    else record[field] = "";
+  });
+  if (state.activeTable === "diagnostic_terms") {
+    record.category = "symptom";
+    record.slug = `term-${Date.now()}`;
+  }
+  if (state.activeTable === "learning_resources") record.type = "link";
+  state.selectedRecord = record;
+  renderAdminManager();
+}
+
+function collectEditorRecord() {
+  const record = { ...state.selectedRecord };
+  document.querySelectorAll("#adminDbEditor [data-field]").forEach((input) => {
+    const field = input.dataset.field;
+    if (input.type === "checkbox") record[field] = input.checked;
+    else if (input.type === "number") record[field] = input.value === "" ? null : Number(input.value);
+    else record[field] = input.value;
+  });
+  return record;
+}
+
+async function saveActiveRecord(event) {
+  event.preventDefault();
+  if (!requireAdmin()) return;
+  const config = tableConfigs[state.activeTable];
+  if (!config.editable) return;
+  const record = collectEditorRecord();
+  const payload = { ...record };
+  let result;
+  if (payload.id) {
+    const id = payload.id;
+    delete payload.created_at;
+    result = await supabase
+      .from(state.activeTable)
+      .update(payload)
+      .eq("id", id)
+      .select()
+      .single();
+  } else {
+    delete payload.id;
+    delete payload.created_at;
+    result = await supabase
+      .from(state.activeTable)
+      .insert(payload)
+      .select()
+      .single();
+  }
+  const { data, error } = result;
+  if (error) {
+    alert(error.message);
+    return;
+  }
+  alert("已保存到数据库");
+  state.selectedRecord = data;
+  await loadActiveTable();
+}
+
+async function toggleActiveRecord() {
+  if (!requireAdmin() || !state.selectedRecord?.id) return;
+  const next = state.selectedRecord.is_active === false;
+  const { error } = await supabase
+    .from(state.activeTable)
+    .update({ is_active: next })
+    .eq("id", state.selectedRecord.id);
+  if (error) {
+    alert(error.message);
+    return;
+  }
+  alert(next ? "已启用" : "已停用");
+  await loadActiveTable();
 }
 
 async function saveResource() {
@@ -158,7 +524,10 @@ async function saveResource() {
     description: document.querySelector("#resourceDescription").value.trim()
   });
   if (error) alert(error.message);
-  else alert("学习资料已保存");
+  else {
+    alert("学习资料已保存");
+    await reloadIfTable("learning_resources");
+  }
 }
 
 async function saveTerm() {
@@ -169,20 +538,37 @@ async function saveTerm() {
     category: document.querySelector("#termCategory").value,
     slug,
     label_cn: label,
-    description: document.querySelector("#termDescription").value.trim()
+    description: document.querySelector("#termDescription").value.trim(),
+    is_active: true,
+    sort_order: 100
   });
   if (error) alert(error.message);
-  else alert("词条已保存");
+  else {
+    alert("词条已保存");
+    await reloadIfTable("diagnostic_terms");
+  }
 }
 
 async function saveFormula() {
   if (!requireAdmin()) return;
-  const { error } = await supabase.from("formulas").insert({
+  const { error } = await supabase.from("formulas").upsert({
     name_cn: document.querySelector("#formulaTitle").value.trim(),
-    modern_notes: document.querySelector("#formulaBody").value.trim()
-  });
+    modern_notes: document.querySelector("#formulaBody").value.trim(),
+    is_active: true
+  }, { onConflict: "name_cn" });
   if (error) alert(error.message);
-  else alert("方药说明已保存");
+  else {
+    alert("方药说明已保存");
+    await reloadIfTable("formulas");
+  }
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
 }
 
 document.querySelector("#loginButton").addEventListener("click", login);
@@ -192,12 +578,29 @@ document.querySelector("#deleteStaffButton").addEventListener("click", deleteSta
 document.querySelector("#saveResourceButton").addEventListener("click", saveResource);
 document.querySelector("#saveTermButton").addEventListener("click", saveTerm);
 document.querySelector("#saveFormulaButton").addEventListener("click", saveFormula);
+document.querySelector("#refreshDataButton").addEventListener("click", async () => {
+  await Promise.all([loadDatabase(), loadActiveTable()]);
+});
+document.querySelector("#newDbRecordButton").addEventListener("click", createBlankRecord);
+document.querySelector("#adminDbEditor").addEventListener("submit", saveActiveRecord);
+document.querySelector("#adminDbSearch").addEventListener("input", renderAdminManager);
+document.querySelectorAll("#adminDbTabs [data-table]").forEach((button) => {
+  button.addEventListener("click", async () => {
+    state.activeTable = button.dataset.table;
+    state.selectedRecord = null;
+    await loadActiveTable();
+  });
+});
 document.querySelector("#exportButton").addEventListener("click", () => {
-  const blob = new Blob([JSON.stringify(state.db, null, 2)], { type: "application/json" });
+  const blob = new Blob([JSON.stringify({
+    activeTable: state.activeTable,
+    rows: state.tableRows,
+    preview: state.db
+  }, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "medical-ai-v6-admin-backup.json";
+  link.download = `medical-ai-v6-${state.activeTable}-backup.json`;
   link.click();
   URL.revokeObjectURL(url);
 });

@@ -366,7 +366,7 @@ function renderList(errorText = "") {
     return;
   }
   if (!rows.length) {
-    list.innerHTML = `<div class="admin-db-empty">当前区域没有数据，或搜索无结果。</div>`;
+    list.innerHTML = `<div class="admin-db-empty">当前区域没有数据。请确认已经在 Supabase SQL Editor 运行对应种子 SQL；如果刚运行过，请点“刷新”。搜索框有内容时也可能是搜索无结果。</div>`;
     return;
   }
   list.innerHTML = rows.map((row) => `

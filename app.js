@@ -748,7 +748,7 @@ function showLocalAiHelp() {
   panel.classList.remove("ready", "warning", "error");
   panel.classList.add("warning");
   title.textContent = "本地 AI 模型：连接说明";
-  status.textContent = "网页不能直接启动电脑程序。请先打开 Ollama；如已安装模型，点“重新检测”或“测试本地模型”。如果浏览器无法访问，请在 Ollama 中允许本网站来源。";
+  status.textContent = "连接顺序：1. 先打开电脑里的 Ollama 程序；2. 在 Ollama 里添加模型，或把 GGUF 注册成本地模型；3. 回本网页点“重新检测”；4. 显示已连接后点“测试本地模型”；5. 测试成功后再生成 AI 推理。网页不能直接启动电脑程序。";
 }
 
 async function initSupabase() {

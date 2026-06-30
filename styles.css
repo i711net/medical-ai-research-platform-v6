@@ -157,6 +157,34 @@ textarea {
   border-color: #fdba74;
 }
 
+.local-ai-guide {
+  margin: -4px 0 14px;
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.local-ai-guide strong {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.local-ai-guide ol {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.local-ai-guide p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .top-actions .admin-entry {
   display: none !important;
 }

@@ -35,7 +35,7 @@ set name_en = excluded.name_en,
     modifications = excluded.modifications,
     modern_notes = excluded.modern_notes;
 
-insert into herbs (name_cn, name_en, nature_flavor, meridians, functions, dosage, contraindications, modern_notes) values
+insert into herbs (name_cn, name_en, nature_flavor, meridians, functions, dosage, cautions, modern_notes) values
   ('黄芪', 'Astragalus', '甘，微温', '脾、肺', '补气升阳，固表止汗，利水消肿，托毒生肌', '教学示例：9-30g', '实热、阴虚阳亢、表实邪盛慎用', '研究涉及免疫、心肾保护、疲劳和蛋白尿等方向'),
   ('酸枣仁', 'Ziziphus seed', '甘、酸，平', '心、肝、胆', '养心补肝，宁心安神，敛汗，生津', '教学示例：10-20g', '嗜睡者、驾驶和镇静药同用需谨慎', '研究涉及睡眠、镇静、焦虑相关'),
   ('天麻', 'Gastrodia', '甘，平', '肝', '息风止痉，平抑肝阳，祛风通络', '教学示例：3-10g', '血虚无风、津液亏虚者需辨证', '研究涉及眩晕、头痛、神经保护'),
@@ -47,5 +47,5 @@ set name_en = excluded.name_en,
     meridians = excluded.meridians,
     functions = excluded.functions,
     dosage = excluded.dosage,
-    contraindications = excluded.contraindications,
+    cautions = excluded.cautions,
     modern_notes = excluded.modern_notes;

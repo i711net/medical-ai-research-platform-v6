@@ -30,7 +30,15 @@ export default async function handler(req, res) {
       return;
     }
 
-    const { event_id: eventId } = await submit.json();
+    const submitText = await submit.text();
+    let submitData;
+    try {
+      submitData = submitText ? JSON.parse(submitText) : {};
+    } catch {
+      res.status(502).json({ error: `Hugging Face Space 返回了非 JSON 内容：${submitText.slice(0, 300)}` });
+      return;
+    }
+    const { event_id: eventId } = submitData;
     if (!eventId) {
       res.status(502).json({ error: "Hugging Face Space did not return an event_id" });
       return;
@@ -43,7 +51,13 @@ export default async function handler(req, res) {
 
       if (text.includes("event: complete")) {
         const dataLine = text.split("\n").find((line) => line.startsWith("data: "));
-        const parsed = dataLine ? JSON.parse(dataLine.slice(6)) : null;
+        let parsed = null;
+        try {
+          parsed = dataLine ? JSON.parse(dataLine.slice(6)) : null;
+        } catch {
+          res.status(502).json({ error: `Hugging Face 完成事件无法解析：${text.slice(0, 300)}` });
+          return;
+        }
         res.status(200).json({ result: Array.isArray(parsed) ? parsed[0] : parsed });
         return;
       }

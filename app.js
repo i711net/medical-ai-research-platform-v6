@@ -231,6 +231,22 @@ const formulaKnowledge = {
     modifications: "气虚明显可加黄芪；痰湿可加陈皮、半夏；食少纳呆可配砂仁、木香。",
     modern: "常作为补气健脾基础方用于教学和研究。"
   },
+  "归脾汤": {
+    source: "《济生方》",
+    composition: "黄芪、人参、白术、茯神、酸枣仁、龙眼肉、木香、当归、远志、甘草、生姜、大枣",
+    usage: "教学资料示例。实际剂量和适应证必须由执业医师辨证决定。",
+    indications: "心脾两虚、气血不足所致失眠多梦、心悸健忘、食少乏力、舌嫩或舌淡、脉弱等。",
+    modifications: "失眠重可酌配养心安神；纳差便溏重需健脾化湿；阴虚内热明显者不宜机械套用。",
+    modern: "常用于心脾两虚型失眠、焦虑、疲劳等教学讨论，需排除器质性疾病。"
+  },
+  "天王补心丹": {
+    source: "《摄生秘剖》",
+    composition: "生地黄、天冬、麦冬、玄参、丹参、当归、五味子、酸枣仁、柏子仁、茯苓、远志、桔梗、朱砂等传统组成",
+    usage: "教学资料示例。含朱砂等传统药物时现代应用必须遵循安全规范，不能自行服用。",
+    indications: "阴虚血少、心神失养所致失眠多梦、心悸、盗汗、舌红少苔、脉细数等。",
+    modifications: "盗汗明显重在滋阴敛汗；虚热明显酌清虚热；现代临床可由医师选择安全替代方案。",
+    modern: "用于阴虚内热、心神不宁相关失眠的教学讨论，需注意药物安全与禁忌。"
+  },
   "川芎茶调散": {
     source: "《太平惠民和剂局方》",
     composition: "川芎、白芷、羌活、细辛、防风、荆芥、薄荷、甘草、茶清",
@@ -259,6 +275,18 @@ const graphSets = {
     ["舌淡", "Pale tongue", 170, 40, false],
     ["气虚证", "Qi deficiency", 104, 128, true],
     ["四君子汤", "Formula", 216, 190, false]
+  ],
+  heartSpleen: [
+    ["失眠多梦", "Insomnia", 28, 48, true],
+    ["舌嫩", "Tender tongue", 170, 40, false],
+    ["心脾两虚", "Heart-Spleen deficiency", 104, 128, true],
+    ["归脾汤", "Formula", 216, 190, false]
+  ],
+  yin: [
+    ["盗汗", "Night sweat", 28, 48, true],
+    ["少苔", "Scant coating", 170, 40, false],
+    ["阴虚内热", "Yin deficiency", 104, 128, true],
+    ["天王补心丹", "Formula", 216, 190, false]
   ]
 };
 
@@ -347,22 +375,53 @@ function analyze() {
   const freeText = document.querySelector("#freeText").value || "";
   const mentions = (terms) => terms.some((term) => freeText.toLowerCase().includes(term.toLowerCase()));
 
-  let profile = "liver";
-  if (selected.has("fever") || selected.has("cough") || selected.has("occipitalHeadache") || mentions(["发热", "咳嗽", "后头痛", "恶寒", "fever", "cough"])) profile = "exterior";
-  if (selected.has("fatigue") || selected.has("poorAppetite") || selected.has("looseStool") || tongue === "pale" || pulse === "deep" || mentions(["乏力", "纳差", "便溏", "fatigue"])) profile = "qi";
-  if (selected.has("chestPain") || selected.has("chestTightness") || mentions(["胸痛", "胸闷", "chest pain"])) profile = "liver";
+  const scores = {
+    liver: 0,
+    exterior: 0,
+    qi: 0,
+    heartSpleen: 0,
+    yin: 0
+  };
+  const add = (profile, amount) => {
+    scores[profile] += amount;
+  };
+
+  if (selected.has("headache") || selected.has("temporalHeadache") || selected.has("vertexHeadache") || selected.has("dizziness")) add("liver", 2);
+  if (selected.has("bitter") || tongue === "red" || tongue === "darkRed" || pulse === "wiry") add("liver", 1);
+  if (selected.has("chestPain") || selected.has("chestTightness") || mentions(["胸痛", "胸闷", "chest pain"])) add("liver", 3);
+
+  if (selected.has("fever") || selected.has("chills") || selected.has("cough") || selected.has("occipitalHeadache")) add("exterior", 2);
+  if (selected.has("phlegm") || selected.has("wheezing") || pulse === "floating" || mentions(["发热", "咳嗽", "后头痛", "恶寒", "fever", "cough"])) add("exterior", 1);
+
+  if (selected.has("fatigue") || selected.has("poorAppetite") || selected.has("looseStool") || selected.has("edema")) add("qi", 2);
+  if (tongue === "pale" || tongue === "teethMarked" || tongue === "swollen" || pulse === "deep" || pulse === "deficient" || mentions(["乏力", "纳差", "便溏", "fatigue"])) add("qi", 1);
+
+  if (selected.has("insomnia") || selected.has("dreaminess") || selected.has("palpitation")) add("heartSpleen", 2);
+  if (selected.has("poorAppetite") || selected.has("looseStool") || selected.has("fatigue")) add("heartSpleen", 1);
+  if (tongue === "tender" || tongue === "pale" || pulse === "weak" || pulse === "deficient" || pulse === "thin") add("heartSpleen", 2);
+  if (mentions(["失眠", "多梦", "心悸", "健忘", "insomnia", "dream"])) add("heartSpleen", 2);
+
+  if (selected.has("nightSweat") || tongue === "scanty" || tongue === "peeled" || pulse === "thin" || pulse === "rapid") add("yin", 2);
+  if ((selected.has("insomnia") || selected.has("dreaminess")) && (tongue === "scanty" || pulse === "thin" || selected.has("nightSweat"))) add("yin", 2);
+
+  let profile = Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0];
+  if (scores[profile] === 0) profile = "heartSpleen";
   state.lastProfile = profile;
 
   const zhResults = {
     liver: ["肝阳上亢", "头痛、舌红、弦脉与睡眠压力因素共同提示肝阳偏亢，治以平肝潜阳。", "需关注血压、紧张型头痛或偏头痛鉴别。若突发剧烈头痛需立即就医。", "天麻钩藤饮 / Gastrodia and Uncaria Decoction", "天麻、钩藤、石决明、牛膝。教学演示建议，不构成处方。"],
     exterior: ["太阳表证", "发热、咳嗽或后头痛偏向外感表证，治以疏风解表。", "考虑上呼吸道感染或流感样症状。高热、呼吸困难需就医。", "川芎茶调散 / Chuan Xiong Cha Tiao San", "川芎、白芷、荆芥、防风。用于教学推理路径展示。"],
-    qi: ["气虚证", "乏力、舌淡、沉脉提示气虚，治以益气健脾。", "考虑疲劳综合、贫血、甲状腺或睡眠问题，建议结合检查。", "四君子汤 / Si Jun Zi Tang", "人参、白术、茯苓、甘草。仅用于教育演示。"]
+    qi: ["气虚证", "乏力、纳差、便溏或舌淡脉虚提示气虚，治以益气健脾。", "考虑疲劳、贫血、甲状腺、营养或睡眠问题，建议结合检查。", "四君子汤 / Si Jun Zi Tang", "人参、白术、茯苓、甘草。仅用于教育演示。"],
+    heartSpleen: ["心脾两虚", "失眠、多梦配合舌嫩、弱脉，偏向心脾两虚、气血不足，治以益气健脾、养血安神。", "需评估焦虑抑郁、睡眠节律紊乱、贫血、甲状腺功能、消化吸收和长期压力因素。", "归脾汤 / Gui Pi Tang", "黄芪、人参、白术、茯神、酸枣仁、龙眼肉、当归、远志等。教学演示建议，不构成处方。"],
+    yin: ["阴虚内热", "失眠多梦、盗汗、少苔或脉细数提示阴虚血少、虚热扰神，治以滋阴养血、清虚热、安心神。", "需排查甲状腺功能异常、感染后低热、围绝经期、焦虑和慢性消耗性疾病。", "天王补心丹 / Tian Wang Bu Xin Dan", "生地黄、天冬、麦冬、酸枣仁、柏子仁、茯苓、远志等。含传统矿物药的方义需现代安全替代评估。"]
   };
 
   const enResults = {
     liver: ["Liver Yang Hyperactivity", "Headache, red tongue, wiry pulse, and stress-related sleep disturbance suggest an upward Liver Yang pattern.", "Monitor blood pressure and differentiate tension-type headache or migraine. Seek urgent care for sudden severe headache.", "Gastrodia and Uncaria Decoction / 天麻钩藤饮", "Gastrodia, Uncaria, Haliotis shell, Achyranthes. Research demo only, not a prescription."],
     exterior: ["Taiyang Exterior Pattern", "Fever, cough, or occipital headache suggests an exterior wind-cold/wind pattern.", "Consider upper respiratory infection or flu-like illness. Seek care for high fever or breathing difficulty.", "Chuan Xiong Cha Tiao San / 川芎茶调散", "Chuanxiong, Angelica dahurica, Schizonepeta, Saposhnikovia. Education demo only."],
-    qi: ["Qi Deficiency Pattern", "Fatigue, pale tongue, and deep pulse suggest Qi deficiency; reasoning focuses on tonifying Qi and spleen support.", "Consider anemia, thyroid issues, sleep problems, or chronic fatigue; pair with clinical tests.", "Si Jun Zi Tang / 四君子汤", "Ginseng, Atractylodes, Poria, Licorice. Education demo only."]
+    qi: ["Qi Deficiency Pattern", "Fatigue, poor appetite, loose stool, pale tongue, or weak pulse suggests Qi deficiency.", "Consider anemia, thyroid issues, nutrition, sleep problems, or chronic fatigue; pair with clinical tests.", "Si Jun Zi Tang / 四君子汤", "Ginseng, Atractylodes, Poria, Licorice. Education demo only."],
+    heartSpleen: ["Heart-Spleen Deficiency", "Insomnia and vivid dreams with a tender tongue and weak pulse suggest Heart-Spleen deficiency and Qi-Blood insufficiency.", "Consider anxiety, circadian disruption, anemia, thyroid function, digestive absorption, and chronic stress.", "Gui Pi Tang / 归脾汤", "Astragalus, Ginseng, Atractylodes, Poria spirit, Ziziphus, Longan, Angelica, Polygala. Education demo only."],
+    yin: ["Yin Deficiency with Deficiency Heat", "Insomnia, vivid dreams, night sweating, scant coating, or thin-rapid pulse suggests Yin-Blood deficiency with deficiency heat disturbing the mind.", "Consider thyroid dysfunction, chronic infection, perimenopause, anxiety, and wasting conditions.", "Tian Wang Bu Xin Dan / 天王补心丹", "Rehmannia, Ophiopogon, Asparagus, Ziziphus, Biota seed, Poria, Polygala. Safety review is required in modern use."]
   };
 
   const data = state.lang === "zh" ? zhResults[profile] : enResults[profile];
@@ -379,7 +438,7 @@ function analyze() {
   document.querySelector("#formulaName").textContent = data[3];
   document.querySelector("#formulaDetail").textContent = data[4];
 
-  const confidence = profile === "liver" ? 0.87 : profile === "exterior" ? 0.82 : 0.79;
+  const confidence = profile === "liver" ? 0.87 : profile === "exterior" ? 0.82 : profile === "heartSpleen" ? 0.84 : profile === "yin" ? 0.83 : 0.79;
   document.querySelector("#confidenceBadge").textContent = confidence.toFixed(2);
   document.querySelector("#retrievalScore").textContent = (confidence + 0.04).toFixed(2);
   document.querySelector("#consistencyScore").textContent = (confidence + 0.01).toFixed(2);
@@ -417,7 +476,13 @@ async function requestHuggingFaceDiagnosis() {
         temperature: 0.2
       })
     });
-    const data = await response.json();
+    const rawText = await response.text();
+    let data;
+    try {
+      data = rawText ? JSON.parse(rawText) : {};
+    } catch {
+      throw new Error(rawText.slice(0, 300) || "AI service returned a non-JSON error");
+    }
     if (!response.ok) throw new Error(data.error || "AI request failed");
     output.textContent = state.lang === "zh"
       ? `Hugging Face 模型返回：\n\n${data.result || "模型没有返回内容。"}`

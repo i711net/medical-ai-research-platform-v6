@@ -1,7 +1,7 @@
 const state = {
   lang: "zh",
   inputLang: "zh",
-  selectedSymptoms: new Set(["headache", "insomnia"]),
+  selectedSymptoms: new Set(),
   role: "doctor",
   lastProfile: "liver",
   supabase: null,

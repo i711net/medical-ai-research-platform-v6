@@ -37,10 +37,21 @@
         </div>
         <div class="local-ai-actions">
           <button class="ghost-button" id="checkLocalAiButton" type="button">重新检测</button>
+          <button class="ghost-button" id="testLocalAiButton" type="button">测试本地模型</button>
           <label class="ghost-button file-action" for="localModelFile">检查 GGUF 文件</label>
           <input id="localModelFile" type="file" accept=".gguf" />
-          <a class="ghost-button" href="https://ollama.com/download" target="_blank" rel="noreferrer">下载 Ollama</a>
+          <button class="ghost-button" id="localAiHelpButton" type="button">连接说明</button>
         </div>
+      </section>
+      <section class="local-ai-guide" aria-label="local AI setup guide">
+        <strong>本地模型连接顺序</strong>
+        <ol>
+          <li>先启动 Ollama：打开电脑里的 Ollama 程序。</li>
+          <li>再添加模型：在 Ollama 里安装模型，或把 GGUF 文件注册成本地模型。</li>
+          <li>回到本网页点“重新检测”，看到“已连接”后点“测试本地模型”。</li>
+          <li>测试成功后，再填写症状并点击“生成 AI 推理”。</li>
+        </ol>
+        <p>如果已经安装 Ollama 但网页检测不到，请确认 Ollama 正在运行，并允许本网站访问本机 Ollama 服务。</p>
       </section>
 
       <main class="workspace">

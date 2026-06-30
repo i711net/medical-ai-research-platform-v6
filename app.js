@@ -680,6 +680,77 @@ function inspectLocalModelFile(event) {
     : `已选择：${file.name}，只有 ${Math.max(1, Math.round(file.size / 1024))} KB，可能不是完整模型文件，而是下载指针或损坏文件。`;
 }
 
+async function testLocalAiModel() {
+  const panel = document.querySelector(".local-ai-connect");
+  const title = document.querySelector("#localAiTitle");
+  const status = document.querySelector("#localAiStatus");
+  if (!panel || !title || !status) return;
+
+  panel.classList.remove("ready", "warning", "error");
+  title.textContent = "本地 AI 模型：正在测试...";
+  status.textContent = "正在向本机 Ollama 发送一个短测试请求。";
+
+  try {
+    const tagsResponse = await fetch("http://127.0.0.1:11434/api/tags");
+    if (!tagsResponse.ok) throw new Error(`Ollama 服务返回 HTTP ${tagsResponse.status}`);
+    const tags = await tagsResponse.json();
+    const models = Array.isArray(tags.models) ? tags.models : [];
+    if (!models.length) {
+      panel.classList.add("warning");
+      title.textContent = "本地 AI 模型：Ollama 已启动，但没有模型";
+      status.textContent = "请先在 Ollama 添加一个模型，然后再测试。";
+      return;
+    }
+
+    const modelName = (models.find((item) => /tcm|deepseek|qwen|yi|llama|gemma|mistral/i.test(item.name)) || models[0]).name;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000);
+    const chatResponse = await fetch("http://127.0.0.1:11434/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: controller.signal,
+      body: JSON.stringify({
+        model: modelName,
+        stream: false,
+        options: { num_predict: 64, temperature: 0.1 },
+        messages: [
+          { role: "user", content: "请用一句中文回答：本地医学AI模型连接测试成功。" }
+        ]
+      })
+    });
+    clearTimeout(timer);
+
+    const rawText = await chatResponse.text();
+    let data;
+    try {
+      data = rawText ? JSON.parse(rawText) : {};
+    } catch {
+      throw new Error(rawText.slice(0, 200) || "Ollama 返回内容无法解析");
+    }
+    if (!chatResponse.ok) throw new Error(data.error || `Ollama 测试 HTTP ${chatResponse.status}`);
+
+    panel.classList.add("ready");
+    title.textContent = "本地 AI 模型：测试成功";
+    status.textContent = `已连接并测试模型：${modelName}。返回：${data.message?.content || data.response || "测试成功"}`;
+  } catch (error) {
+    panel.classList.add("error");
+    title.textContent = "本地 AI 模型：测试失败";
+    status.textContent = `没有完成本机模型测试：${error.message || error}。请确认 Ollama 已启动，并允许本网站访问本机 Ollama。`;
+  }
+}
+
+function showLocalAiHelp() {
+  const panel = document.querySelector(".local-ai-connect");
+  const title = document.querySelector("#localAiTitle");
+  const status = document.querySelector("#localAiStatus");
+  if (!panel || !title || !status) return;
+
+  panel.classList.remove("ready", "warning", "error");
+  panel.classList.add("warning");
+  title.textContent = "本地 AI 模型：连接说明";
+  status.textContent = "网页不能直接启动电脑程序。请先打开 Ollama；如已安装模型，点“重新检测”或“测试本地模型”。如果浏览器无法访问，请在 Ollama 中允许本网站来源。";
+}
+
 async function initSupabase() {
   const config = window.SUPABASE_CONFIG || {};
   const isConfigured = config.url?.startsWith("https://") && config.anonKey?.length > 30;
@@ -1370,6 +1441,8 @@ document.querySelector("#signupButton")?.addEventListener("click", signUp);
 document.querySelector("#loginButton")?.addEventListener("click", signIn);
 document.querySelector("#logoutButton")?.addEventListener("click", signOut);
 document.querySelector("#checkLocalAiButton")?.addEventListener("click", detectLocalAi);
+document.querySelector("#testLocalAiButton")?.addEventListener("click", testLocalAiModel);
+document.querySelector("#localAiHelpButton")?.addEventListener("click", showLocalAiHelp);
 document.querySelector("#localModelFile")?.addEventListener("change", inspectLocalModelFile);
 document.querySelector("#createInviteButton")?.addEventListener("click", createInviteCode);
 document.querySelector("#formulaName")?.addEventListener("click", () => {

@@ -9,6 +9,7 @@ const state = {
   authUser: null,
   profile: null,
   currentPassword: "",
+  knowledgeStack: [],
   db: {
     visits: [],
     records: [],
@@ -1820,19 +1821,36 @@ function renderRole() {
   applyPermissions();
 }
 
-function openKnowledge(name) {
+async function openKnowledge(name, options = {}) {
   const formulaName = Object.keys(formulaKnowledge).find((key) => name.includes(key));
   const herbName = Object.keys(herbKnowledge).find((key) => name.includes(key));
   const normalized = formulaName || herbName || name;
-  const item = formulaName ? formulaKnowledge[formulaName] : herbKnowledge[herbName];
+  let item = formulaName ? formulaKnowledge[formulaName] : herbKnowledge[herbName];
+  let itemType = formulaName ? "formula" : "herb";
   const popover = document.querySelector("#knowledgePopover");
   const title = document.querySelector("#knowledgeTitle");
   const body = document.querySelector("#knowledgeBody");
+  const backButton = document.querySelector("#backKnowledgeButton");
   if (!popover || !title || !body) return;
-  title.textContent = normalized || name;
+  if (!options.fromHistory && !popover.hidden && title.textContent) {
+    state.knowledgeStack.push({
+      title: title.textContent,
+      body: body.innerHTML
+    });
+  }
+  title.textContent = formulaName ? (normalized || name) : `${normalized || name} 药材说明`;
+  body.innerHTML = `<p>正在读取知识库...</p>`;
+  popover.hidden = false;
+  if (!item) {
+    const remote = await fetchKnowledgeRecord(normalized || name, formulaName ? "formula" : "herb");
+    if (remote) {
+      item = remote.item;
+      itemType = remote.type;
+    }
+  }
   if (!item) {
     body.innerHTML = `<p>后台尚未录入该方剂或中药说明。管理员可在方药知识库中补充。</p>`;
-  } else if (formulaName) {
+  } else if (itemType === "formula") {
     body.innerHTML = `
       <dl>
         <dt>出处</dt><dd>${item.source}</dd>
@@ -1855,12 +1873,70 @@ function openKnowledge(name) {
       </dl>
     `;
   }
-  popover.hidden = false;
+  if (backButton) backButton.hidden = state.knowledgeStack.length === 0;
+}
+
+async function fetchKnowledgeRecord(name, preferredType = "herb") {
+  if (!state.supabase || !name) return null;
+  const cleanName = String(name).replace(/药材说明/g, "").trim();
+  try {
+    if (preferredType === "formula") {
+      const { data, error } = await state.supabase
+        .from("formulas")
+        .select("name_cn,source,composition,usage,indications,modifications,modern_notes")
+        .eq("name_cn", cleanName)
+        .maybeSingle();
+      if (!error && data) {
+        return {
+          type: "formula",
+          item: {
+            source: data.source || "后台知识库",
+            composition: data.composition || "",
+            usage: data.usage || data.dosage || "",
+            indications: data.indications || "",
+            modifications: data.modifications || "",
+            modern: data.modern_notes || ""
+          }
+        };
+      }
+    }
+    const { data, error } = await state.supabase
+      .from("herbs")
+      .select("name_cn,name_en,nature_flavor,meridians,functions,dosage,cautions,modern_notes")
+      .eq("name_cn", cleanName)
+      .maybeSingle();
+    if (error || !data) return null;
+    return {
+      type: "herb",
+      item: {
+        type: data.name_en ? `中药材 / ${data.name_en}` : "中药材",
+        nature: `${data.nature_flavor || "待补充"}；归经：${data.meridians || "待补充"}`,
+        actions: data.functions || "待补充",
+        dosage: data.dosage || "需医师辨证决定",
+        western: data.modern_notes || "待补充",
+        safety: data.cautions || "孕期、儿童、肝肾功能异常及合并用药者需专业评估"
+      }
+    };
+  } catch {
+    return null;
+  }
+}
+
+function backKnowledge() {
+  const previous = state.knowledgeStack.pop();
+  const backButton = document.querySelector("#backKnowledgeButton");
+  if (!previous) {
+    if (backButton) backButton.hidden = true;
+    return;
+  }
+  document.querySelector("#knowledgeTitle").textContent = previous.title;
+  document.querySelector("#knowledgeBody").innerHTML = previous.body;
+  if (backButton) backButton.hidden = state.knowledgeStack.length === 0;
 }
 
 function renderKnowledgeLinks(text) {
   return text.split(/(、|，|,|；|;|\s+)/).map((part) => {
-    if (herbKnowledge[part]) return `<button class="knowledge-link" type="button" data-knowledge="${part}">${part}</button>`;
+    if (/^[\u4e00-\u9fa5]{2,8}$/.test(part)) return `<button class="knowledge-link" type="button" data-knowledge="${part}">${part}</button>`;
     return part;
   }).join("");
 }
@@ -1962,7 +2038,10 @@ document.querySelector("#knowledgeBody")?.addEventListener("click", (event) => {
   const target = event.target.closest("[data-knowledge]");
   if (target) openKnowledge(target.dataset.knowledge || target.textContent || "");
 });
+document.querySelector("#backKnowledgeButton")?.addEventListener("click", backKnowledge);
 document.querySelector("#closeKnowledgeButton")?.addEventListener("click", () => {
+  state.knowledgeStack = [];
+  document.querySelector("#backKnowledgeButton").hidden = true;
   document.querySelector("#knowledgePopover").hidden = true;
 });
 document.querySelector("#clearSelectionButton")?.addEventListener("click", () => {

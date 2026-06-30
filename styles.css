@@ -950,6 +950,17 @@ textarea:disabled {
   padding: 18px;
 }
 
+.knowledge-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.knowledge-actions .ghost-button:only-child {
+  margin-left: auto;
+}
+
 .knowledge-card h3 {
   margin: 0 0 12px;
 }

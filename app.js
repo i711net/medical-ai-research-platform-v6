@@ -1041,8 +1041,8 @@ async function requestLocalOllamaDiagnosis({ selectedLabels, tongueText, pulseTe
     const models = Array.isArray(tags.models) ? tags.models : [];
     if (!models.length) {
       return {
-        handled: true,
-        message: buildLocalAiGuide("已检测到 Ollama，但还没有安装任何模型。")
+        handled: false,
+        message: buildLocalAiGuide("已检测到 Ollama，但还没有安装任何模型，已自动改用 Hugging Face 云端备用模型。")
       };
     }
 
@@ -1219,10 +1219,10 @@ async function detectLocalAi() {
     const models = Array.isArray(data.models) ? data.models : [];
     if (!models.length) {
       panel.classList.add("warning");
-      title.textContent = state.lang === "zh" ? "本地 AI 模型：已发现 Ollama，但未安装模型" : "Local AI model: Ollama found, no models installed";
+      title.textContent = state.lang === "zh" ? "云端 AI 模型：Hugging Face 备用模式" : "Cloud AI model: Hugging Face fallback";
       status.textContent = state.lang === "zh"
-        ? "请先在本机 Ollama 里添加一个模型。添加完成后点“重新检测”，网站会自动接入。"
-        : "Add a model to local Ollama first. Then click Check again and the site will connect automatically.";
+        ? "已检测到 Ollama 服务，但里面没有模型。电脑端会自动改用 Hugging Face 云端备用模型；如果想用本地模型，请在电脑命令行运行：ollama pull qwen2.5:7b-instruct。"
+        : "Ollama is running but has no models. Desktop will automatically use Hugging Face cloud fallback. To use local AI, run: ollama pull qwen2.5:7b-instruct.";
       return;
     }
 

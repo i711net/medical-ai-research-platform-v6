@@ -51,7 +51,7 @@
           <li>回到本网页点“重新检测”，看到“已连接”后点“测试本地模型”。</li>
           <li>测试成功后，再填写症状并点击“生成 AI 推理”。</li>
         </ol>
-        <p>如果已经安装 Ollama 但网页检测不到，请确认 Ollama 正在运行，并允许本网站访问本机 Ollama 服务。</p>
+        <p>电脑端如果已经安装 Ollama 但网页检测不到，请确认 Ollama 正在运行，并允许本网站访问本机 Ollama 服务。手机端默认使用 Hugging Face 云端备用模型，不检测电脑本机 Ollama。</p>
       </details>
 
       <main class="workspace">
@@ -192,11 +192,11 @@
           <div class="panel-heading compact">
             <div>
               <h2 data-i18n="aiModelOutput">本地 / Hugging Face AI 模型输出</h2>
-              <p>本机 Ollama 优先，Hugging Face 备用。</p>
+              <p>电脑端本机 Ollama 优先；手机端默认 Hugging Face 云端备用。</p>
             </div>
           </div>
           <div class="ai-model-output">
-            <div id="aiOutput">点击“生成 AI 推理”后，会优先显示本地规则结果，并检测本机 Ollama 模型。</div>
+            <div id="aiOutput">点击“生成 AI 推理”后，电脑端优先检测本机 Ollama；手机端直接使用 Hugging Face 云端备用模型。</div>
           </div>
         </section>
 

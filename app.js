@@ -955,22 +955,27 @@ async function requestHuggingFaceDiagnosis() {
   const tongueText = getTongueText();
   const pulseText = document.querySelector("#pulseSelect").selectedOptions[0]?.textContent?.split("/")[0]?.trim() || "未选择";
   const freeText = document.querySelector("#freeText").value || "";
+  const mobile = isMobileDevice();
 
   const sentSummary = state.lang === "zh"
-    ? `正在检测本机 Ollama AI 模型：\n症状：${selectedLabels.join("、") || "未选择"}\n舌象：${tongueText}\n脉象：${pulseText}\n自由描述：${freeText || "无"}`
-    : `Checking local Ollama AI model:\nSymptoms: ${selectedLabels.join(", ") || "None selected"}\nTongue: ${tongueText}\nPulse: ${pulseText}\nFree text: ${freeText || "None"}`;
+    ? `${mobile ? "手机端默认使用 Hugging Face 云端模型" : "正在检测本机 Ollama AI 模型"}：\n症状：${selectedLabels.join("、") || "未选择"}\n舌象：${tongueText}\n脉象：${pulseText}\n自由描述：${freeText || "无"}`
+    : `${mobile ? "Mobile uses Hugging Face cloud model by default" : "Checking local Ollama AI model"}:\nSymptoms: ${selectedLabels.join(", ") || "None selected"}\nTongue: ${tongueText}\nPulse: ${pulseText}\nFree text: ${freeText || "None"}`;
   output.textContent = sentSummary;
 
-  const localResult = await requestLocalOllamaDiagnosis({ selectedLabels, tongueText, pulseText, freeText });
-  if (localResult.handled) {
-    output.textContent = localResult.message;
-    return;
+  let localUnavailableMessage = "";
+  if (!mobile) {
+    const localResult = await requestLocalOllamaDiagnosis({ selectedLabels, tongueText, pulseText, freeText });
+    if (localResult.handled) {
+      output.textContent = localResult.message;
+      return;
+    }
+    localUnavailableMessage = localResult.message || "";
   }
 
   try {
     output.textContent = state.lang === "zh"
-      ? `${sentSummary}\n\n未检测到可用本机 Ollama，正在尝试 Hugging Face 备用模型...`
-      : `${sentSummary}\n\nNo usable local Ollama detected. Trying Hugging Face fallback...`;
+      ? `${sentSummary}\n\n${mobile ? "正在调用 Hugging Face 云端备用模型..." : "未检测到可用本机 Ollama，正在尝试 Hugging Face 备用模型..."}`
+      : `${sentSummary}\n\n${mobile ? "Calling Hugging Face cloud fallback..." : "No usable local Ollama detected. Trying Hugging Face fallback..."}`;
     const response = await fetch("/api/ai-diagnose", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -993,13 +998,20 @@ async function requestHuggingFaceDiagnosis() {
     }
     if (!response.ok) throw new Error(data.error || "AI request failed");
     output.textContent = state.lang === "zh"
-      ? `Hugging Face 模型返回：\n\n${data.result || "模型没有返回内容。"}`
-      : `Hugging Face model response:\n\n${data.result || "The model returned no content."}`;
+      ? `${mobile ? "手机端 Hugging Face 模型返回" : "Hugging Face 模型返回"}：\n\n${data.result || "模型没有返回内容。"}`
+      : `${mobile ? "Mobile Hugging Face model response" : "Hugging Face model response"}:\n\n${data.result || "The model returned no content."}`;
   } catch (error) {
     output.textContent = state.lang === "zh"
-      ? `Hugging Face 模型暂不可用：${error.message}\n\n已保留上方本地规则 + GraphRAG 演示结果。`
-      : `Hugging Face model unavailable: ${error.message}\n\nLocal rule + GraphRAG demo result remains above.`;
+      ? `${localUnavailableMessage ? `${localUnavailableMessage}\n\n` : ""}Hugging Face 模型暂不可用：${error.message}\n\n已保留上方本地规则 + GraphRAG 演示结果。`
+      : `${localUnavailableMessage ? `${localUnavailableMessage}\n\n` : ""}Hugging Face model unavailable: ${error.message}\n\nLocal rule + GraphRAG demo result remains above.`;
   }
+}
+
+function isMobileDevice() {
+  const ua = navigator.userAgent || "";
+  const byAgent = /Android|iPhone|iPad|iPod|Mobile|Windows Phone|HarmonyOS/i.test(ua);
+  const byScreen = window.matchMedia?.("(max-width: 820px)")?.matches && navigator.maxTouchPoints > 0;
+  return byAgent || byScreen;
 }
 
 async function fetchLocalOllama(path, options = {}, timeout = 30000) {
@@ -1090,7 +1102,7 @@ async function requestLocalOllamaDiagnosis({ selectedLabels, tongueText, pulseTe
     const message = String(error.message || error);
     const likelyCors = message.includes("Failed to fetch") || message.includes("NetworkError");
     return {
-      handled: true,
+      handled: false,
       message: buildLocalAiGuide(likelyCors
         ? "未检测到可用的本机 Ollama，或浏览器被 CORS 拦截。"
         : `本机 Ollama 暂不可用：${message}`)
@@ -1187,6 +1199,14 @@ async function detectLocalAi() {
   if (!panel || !title || !status) return;
 
   panel.classList.remove("ready", "warning", "error");
+  if (isMobileDevice()) {
+    panel.classList.add("ready");
+    title.textContent = state.lang === "zh" ? "手机端 AI 模型：Hugging Face 云端模式" : "Mobile AI model: Hugging Face cloud mode";
+    status.textContent = state.lang === "zh"
+      ? "手机端不会检测电脑本机 Ollama。点击“生成 AI 推理”时会直接调用 Hugging Face 云端备用模型；如果云端不可用，仍会保留左侧规则 + GraphRAG 推理结果。"
+      : "Mobile will not check desktop Ollama. Diagnosis will call the Hugging Face cloud fallback directly; local rule + GraphRAG remains available if cloud is unavailable.";
+    return;
+  }
   title.textContent = state.lang === "zh" ? "本地 AI 模型：正在检测..." : "Local AI model: checking...";
   status.textContent = state.lang === "zh"
     ? "请连接本机 Ollama 模型；连接成功后这里会显示已连接。"
@@ -1251,6 +1271,12 @@ async function testLocalAiModel() {
   if (!panel || !title || !status) return;
 
   panel.classList.remove("ready", "warning", "error");
+  if (isMobileDevice()) {
+    panel.classList.add("ready");
+    title.textContent = "手机端 AI 模型：Hugging Face 云端模式";
+    status.textContent = "手机端不测试电脑本机 Ollama。请直接点击“生成 AI 推理”，系统会走 Hugging Face 云端备用模型。";
+    return;
+  }
   title.textContent = "本地 AI 模型：正在测试...";
   status.textContent = "正在向本机 Ollama 发送一个短测试请求。";
 
@@ -1307,6 +1333,11 @@ function showLocalAiHelp() {
 
   panel.classList.remove("ready", "warning", "error");
   panel.classList.add("warning");
+  if (isMobileDevice()) {
+    title.textContent = "手机端 AI 模型：连接说明";
+    status.textContent = "手机端默认走 Hugging Face 云端备用模型，不需要安装 Ollama，也不会连接电脑 localhost。直接选择症状、舌质、舌苔、脉象后点击“生成 AI 推理”即可。";
+    return;
+  }
   title.textContent = "本地 AI 模型：连接说明";
   status.textContent = `连接顺序：1. 先打开电脑里的 Ollama 程序；2. 在 Ollama 里添加模型；3. 如果网页测试 Failed to fetch，请设置 OLLAMA_ORIGINS=${getOllamaAllowedOriginsText()}；4. 完全退出并重启 Ollama；5. 回本网页点“重新检测”和“测试本地模型”。手机端不能直接调用电脑 localhost 模型，需使用云端 AI 接口或安全远程代理。`;
 }

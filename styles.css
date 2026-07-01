@@ -921,6 +921,31 @@ meter {
   line-height: 1.65;
 }
 
+.learning-import-tools {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 10px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  background: white;
+}
+
+.learning-import-tools input {
+  min-height: 38px;
+  padding: 7px;
+  background: var(--panel-soft);
+}
+
+.learning-import-tools small,
+.encoding-hint {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  line-height: 1.5;
+  font-size: 12px;
+}
+
 .editor-heading span {
   color: var(--muted);
   font-size: 12px;

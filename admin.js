@@ -642,7 +642,13 @@ function renderLearningEditor() {
     </label>
     <label class="admin-edit-field learning-content-field">
       <span>书籍正文 / 章节内容</span>
+      <div class="learning-import-tools">
+        <input id="learningTextFileInput" type="file" accept=".txt,.csv,.md,.log,.list,text/plain,text/markdown,text/csv" />
+        <button class="ghost-button" id="appendLearningTextButton" type="button">追加到正文</button>
+        <small>TXT 或目录清单建议直接导入文件，系统会优先按 UTF-8 读取，失败后按 GB18030/GBK 读取。</small>
+      </div>
       <textarea data-learning-field="content" rows="18" placeholder="可以直接把 TXT、Word/WPS 里的文字复制粘贴到这里。">${escapeHtml(record.content || "")}</textarea>
+      <small class="encoding-hint">如果正文出现很多“����”，说明复制前已经乱码，请从原始 TXT 文件导入，或把原文件另存为 UTF-8 后再复制。</small>
     </label>
     <div class="editor-actions">
       <button class="primary-button" type="submit">保存学习资料</button>
@@ -650,6 +656,43 @@ function renderLearningEditor() {
     </div>
   `;
   editor.querySelector("#toggleLearningActiveButton")?.addEventListener("click", toggleLearningActive);
+  editor.querySelector("#learningTextFileInput")?.addEventListener("change", importLearningTextFile);
+  editor.querySelector("#appendLearningTextButton")?.addEventListener("click", appendImportedLearningText);
+}
+
+async function readTextFileWithEncoding(file) {
+  const buffer = await file.arrayBuffer();
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(buffer);
+  } catch {
+    return new TextDecoder("gb18030").decode(buffer);
+  }
+}
+
+async function importLearningTextFile(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+  const text = await readTextFileWithEncoding(file);
+  const titleInput = document.querySelector("#learningEditor [data-learning-field='title']");
+  const contentInput = document.querySelector("#learningEditor [data-learning-field='content']");
+  if (titleInput && !titleInput.value.trim()) {
+    titleInput.value = file.name.replace(/\.[^.]+$/, "");
+  }
+  if (contentInput) {
+    contentInput.value = text;
+  }
+}
+
+async function appendImportedLearningText() {
+  const fileInput = document.querySelector("#learningTextFileInput");
+  const file = fileInput?.files?.[0];
+  const contentInput = document.querySelector("#learningEditor [data-learning-field='content']");
+  if (!file || !contentInput) {
+    alert("请先选择一个 TXT 或目录文本文件");
+    return;
+  }
+  const text = await readTextFileWithEncoding(file);
+  contentInput.value = `${contentInput.value.trim()}\n\n${text}`.trim();
 }
 
 function createLearningResource() {

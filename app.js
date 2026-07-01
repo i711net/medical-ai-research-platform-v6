@@ -1233,11 +1233,11 @@ async function detectLocalAi() {
       ? `已通过 ${baseUrl} 检测到 Ollama 模型：${names}。生成 AI 推理时会优先使用本机模型。`
       : `Detected Ollama models through ${baseUrl}: ${names}. AI reasoning will use local models first.`;
   } catch (error) {
-    panel.classList.add("error");
-    title.textContent = state.lang === "zh" ? "本地 AI 模型：未连接" : "Local AI model: not connected";
+    panel.classList.add("warning");
+    title.textContent = state.lang === "zh" ? "云端 AI 模型：Hugging Face 备用模式" : "Cloud AI model: Hugging Face fallback";
     status.textContent = state.lang === "zh"
-      ? `Ollama 可能已启动，但浏览器访问被拦截。请把 OLLAMA_ORIGINS 设置为：${getOllamaAllowedOriginsText()}，然后完全退出并重启 Ollama。`
-      : "Ollama may be running, but browser access is blocked. Allow this site to access local Ollama, then check again.";
+      ? `本机 Ollama 暂未连接，电脑端会自动改用 Hugging Face 云端备用模型。若仍想使用本机 Ollama，请把 OLLAMA_ORIGINS 设置为：${getOllamaAllowedOriginsText()}，然后完全退出并重启 Ollama。`
+      : "Local Ollama is not connected. Desktop will automatically use the Hugging Face cloud fallback. To use local Ollama, allow this site in OLLAMA_ORIGINS and fully restart Ollama.";
   }
 }
 

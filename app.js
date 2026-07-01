@@ -895,7 +895,7 @@ function analyze() {
     : state.lang === "zh"
       ? "Risk level: moderate. 本系统仅用于研究与教学。"
       : "Risk level: moderate. This system is for research and education only.";
-  document.querySelector("#formulaName").textContent = data[3];
+  document.querySelector("#formulaName").innerHTML = renderKnowledgeLinks(data[3]);
   document.querySelector("#formulaDetail").innerHTML = renderKnowledgeLinks(data[4]);
 
   const confidenceMap = {
@@ -1937,11 +1937,46 @@ function backKnowledge() {
   if (backButton) backButton.hidden = state.knowledgeStack.length === 0;
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
 function renderKnowledgeLinks(text) {
-  return text.split(/(、|，|,|；|;|\s+)/).map((part) => {
-    if (/^[\u4e00-\u9fa5]{2,8}$/.test(part)) return `<button class="knowledge-link" type="button" data-knowledge="${part}">${part}</button>`;
-    return part;
-  }).join("");
+  const raw = String(text ?? "");
+  if (!raw) return "";
+  const terms = [...new Set([
+    ...Object.keys(formulaKnowledge),
+    ...Object.keys(herbKnowledge)
+  ])]
+    .filter((term) => raw.includes(term))
+    .sort((a, b) => b.length - a.length);
+  if (!terms.length) return escapeHtml(raw).replace(/\n/g, "<br>");
+
+  let html = "";
+  let index = 0;
+  while (index < raw.length) {
+    let match = null;
+    let matchIndex = raw.length;
+    for (const term of terms) {
+      const found = raw.indexOf(term, index);
+      if (found !== -1 && (found < matchIndex || (found === matchIndex && term.length > (match?.length || 0)))) {
+        match = term;
+        matchIndex = found;
+      }
+    }
+    if (!match) {
+      html += escapeHtml(raw.slice(index));
+      break;
+    }
+    html += escapeHtml(raw.slice(index, matchIndex));
+    html += `<button class="knowledge-link" type="button" data-knowledge="${escapeHtml(match)}">${escapeHtml(match)}</button>`;
+    index = matchIndex + match.length;
+  }
+  return html.replace(/\n/g, "<br>");
 }
 
 function resetDemoData() {
@@ -2030,8 +2065,9 @@ document.querySelector("#testLocalAiButton")?.addEventListener("click", testLoca
 document.querySelector("#localAiHelpButton")?.addEventListener("click", showLocalAiHelp);
 document.querySelector("#localModelFile")?.addEventListener("change", inspectLocalModelFile);
 document.querySelector("#createInviteButton")?.addEventListener("click", createInviteCode);
-document.querySelector("#formulaName")?.addEventListener("click", () => {
-  openKnowledge(document.querySelector("#formulaName").textContent || "");
+document.querySelector("#formulaName")?.addEventListener("click", (event) => {
+  const target = event.target.closest("[data-knowledge]");
+  if (target) openKnowledge(target.dataset.knowledge || target.textContent || "");
 });
 document.querySelector("#formulaDetail")?.addEventListener("click", (event) => {
   const target = event.target.closest("[data-knowledge]");

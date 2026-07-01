@@ -18,7 +18,7 @@
           </div>
         </div>
         <nav class="top-actions">
-          <div class="top-login">
+          <div class="top-login hidden-panel">
             <input id="authEmail" type="text" placeholder="管理员登录名" autocomplete="username" />
             <input id="authPassword" type="password" placeholder="管理员密码" autocomplete="current-password" />
             <button class="primary-button" id="loginButton" type="button">登录</button>
@@ -133,18 +133,25 @@
           <div class="audit-log" id="auditLog"></div>
         </section>
 
-        <section class="panel ops-panel">
+        <section class="panel ops-panel admin-full learning-admin-panel">
           <div class="panel-heading compact">
             <div>
-              <h2>学习资料管理</h2>
-              <p>快速新增学习资料；完整编辑请用上方“数据库可视化管理”。</p>
+              <h2>学习资料书架编辑</h2>
+              <p>左侧是书籍或资料名称，点击后右侧直接编辑正文。这里保存后，主页学习区会同步显示。</p>
             </div>
+            <button class="ghost-button" id="reloadLearningButton" type="button">刷新书架</button>
           </div>
-          <div class="stack">
-            <input id="resourceTitle" type="text" placeholder="资料标题" />
-            <input id="resourceUrl" type="url" placeholder="外部链接或文件地址" />
-            <textarea id="resourceDescription" rows="3" placeholder="资料说明"></textarea>
-            <button class="ghost-button" id="saveResourceButton" type="button">保存学习资料</button>
+          <div class="learning-admin-layout">
+            <aside class="learning-admin-sidebar">
+              <div class="admin-db-toolbar learning-admin-toolbar">
+                <input id="learningSearch" type="search" placeholder="搜索书名或正文" />
+                <button class="ghost-button" id="newLearningButton" type="button">新增书籍</button>
+              </div>
+              <div class="learning-admin-list" id="learningAdminList"></div>
+            </aside>
+            <form class="learning-admin-editor" id="learningEditor">
+              <div class="empty-editor">请选择左侧书籍，或点击“新增书籍”。</div>
+            </form>
           </div>
         </section>
 
@@ -201,6 +208,6 @@
       </main>
     </div>
 
-    <script src="./admin.js?v=20260701-db-admin" type="module"></script>
+    <script src="./admin.js?v=20260701-learning" type="module"></script>
   </body>
 </html>

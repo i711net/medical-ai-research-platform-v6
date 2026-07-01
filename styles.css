@@ -835,6 +835,92 @@ meter {
   border-bottom: 1px solid var(--line);
 }
 
+.learning-admin-panel {
+  min-height: 660px;
+}
+
+.learning-admin-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.72fr) minmax(480px, 1.28fr);
+  gap: 12px;
+}
+
+.learning-admin-sidebar,
+.learning-admin-editor {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-soft);
+}
+
+.learning-admin-sidebar {
+  padding: 10px;
+}
+
+.learning-admin-toolbar {
+  grid-template-columns: minmax(160px, 1fr) auto;
+  margin: 0 0 10px;
+}
+
+.learning-admin-list {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  max-height: 560px;
+  overflow: auto;
+}
+
+.learning-book-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.learning-book-row > button:first-child {
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: white;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.learning-book-row.active > button:first-child {
+  border-color: #0d9488;
+  background: #ecfdf5;
+}
+
+.learning-book-row strong {
+  font-size: 14px;
+  color: var(--text);
+}
+
+.learning-book-row span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.mini-edit-button {
+  min-height: auto;
+  padding: 0 10px;
+}
+
+.learning-admin-editor {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  max-height: 620px;
+  overflow: auto;
+  padding: 12px;
+}
+
+.learning-content-field textarea {
+  min-height: 320px;
+  line-height: 1.65;
+}
+
 .editor-heading span {
   color: var(--muted);
   font-size: 12px;
@@ -1097,6 +1183,45 @@ textarea:disabled {
   background: var(--panel-soft);
   padding: 14px;
   line-height: 1.7;
+  overflow: auto;
+}
+
+.resource-viewer h2 {
+  margin: 0 0 10px;
+  font-size: 20px;
+}
+
+.resource-description {
+  color: var(--muted);
+  margin: 0 0 12px;
+}
+
+.resource-content {
+  white-space: pre-wrap;
+  color: var(--text);
+}
+
+.resource-media,
+.resource-frame {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: white;
+}
+
+.resource-media {
+  max-height: 620px;
+  object-fit: contain;
+}
+
+.resource-frame {
+  min-height: 620px;
+}
+
+.resource-open-link {
+  margin-top: 12px;
 }
 
 .knowledge-popover {
@@ -1166,7 +1291,8 @@ textarea:disabled {
     grid-template-columns: 1fr;
   }
 
-  .admin-db-layout {
+  .admin-db-layout,
+  .learning-admin-layout {
     grid-template-columns: 1fr;
   }
 

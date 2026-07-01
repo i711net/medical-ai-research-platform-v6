@@ -34,21 +34,49 @@ async function loadResources() {
 
 function renderViewer(resource) {
   const viewer = document.querySelector("#resourceViewer");
-  if (resource.url) {
-    viewer.innerHTML = `<a class="primary-button" href="${resource.url}" target="_blank" rel="noreferrer">打开资料</a>`;
-    return;
+  const title = escapeHtml(resource.title || "学习资料");
+  const description = resource.description ? `<p class="resource-description">${escapeHtml(resource.description)}</p>` : "";
+  const content = resource.content ? `<article class="resource-content">${escapeHtml(resource.content)}</article>` : "";
+  const url = resource.url || "";
+  let media = "";
+  if (url) {
+    const safeUrl = escapeHtml(url);
+    if (resource.type === "image") {
+      media = `<img class="resource-media" src="${safeUrl}" alt="${title}" />`;
+    } else if (resource.type === "video") {
+      media = `<video class="resource-media" src="${safeUrl}" controls></video>`;
+    } else if (resource.type === "audio") {
+      media = `<audio class="resource-media" src="${safeUrl}" controls></audio>`;
+    } else if (resource.type === "pdf") {
+      media = `<iframe class="resource-frame" src="${safeUrl}" title="${title}"></iframe>`;
+    }
+    media += `<a class="primary-button resource-open-link" href="${safeUrl}" target="_blank" rel="noreferrer">打开原文件 / 链接</a>`;
   }
-  viewer.textContent = resource.content || resource.description || "暂无预览。";
+  viewer.innerHTML = `
+    <h2>${title}</h2>
+    ${description}
+    ${content || "<p>暂无正文内容。管理员可以在后台“学习资料书架编辑”中粘贴文字。</p>"}
+    ${media}
+  `;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
 }
 
 const resources = await loadResources();
 const list = document.querySelector("#learningList");
 list.innerHTML = resources.map((item, index) => `
   <button class="resource-row" type="button" data-index="${index}">
-    <strong>${item.title}</strong>
-    <span>${item.type || "resource"} · ${item.description || ""}</span>
+    <strong>${escapeHtml(item.title || "未命名资料")}</strong>
+    <span>${escapeHtml(item.type || "resource")} · ${escapeHtml(item.description || "")}</span>
   </button>
 `).join("");
 list.querySelectorAll("[data-index]").forEach((button) => {
   button.addEventListener("click", () => renderViewer(resources[Number(button.dataset.index)]));
 });
+if (resources.length) renderViewer(resources[0]);

@@ -11,8 +11,12 @@ const state = {
   activeTable: "diagnostic_terms",
   selectedRecord: null,
   tableRows: [],
+  learningRows: [],
+  selectedLearning: null,
   db: { visits: [], records: [], audit: [] }
 };
+
+const ADMIN_SESSION_KEY = "medical-ai-v6-admin-session";
 
 const tableConfigs = {
   diagnostic_terms: {
@@ -72,13 +76,13 @@ const tableConfigs = {
   learning_resources: {
     title: "医学学习资料",
     editable: true,
-    order: "sort_order",
+    order: "created_at",
     fields: [
       ["title", "资料标题", "text", { required: true }],
       ["type", "类型", "select", ["link", "pdf", "video", "audio", "text", "image", "office"]],
       ["url", "链接/文件地址", "text"],
       ["description", "说明", "textarea"],
-      ["sort_order", "排序", "number"],
+      ["content", "正文内容", "textarea"],
       ["is_active", "启用", "checkbox"]
     ],
     display: (row) => row.title,
@@ -149,6 +153,26 @@ function setStatus(text) {
   document.querySelector("#authStatus").textContent = text;
 }
 
+function saveAdminSession(profile, password) {
+  const value = JSON.stringify({
+    login_name: profile.login_name,
+    display_name: profile.display_name,
+    role: profile.role,
+    password
+  });
+  sessionStorage.setItem(ADMIN_SESSION_KEY, value);
+  localStorage.setItem(ADMIN_SESSION_KEY, value);
+}
+
+function readAdminSession() {
+  return sessionStorage.getItem(ADMIN_SESSION_KEY) || localStorage.getItem(ADMIN_SESSION_KEY);
+}
+
+function clearAdminSession() {
+  sessionStorage.removeItem(ADMIN_SESSION_KEY);
+  localStorage.removeItem(ADMIN_SESSION_KEY);
+}
+
 function requireAdmin() {
   const ok = state.profile?.role === "admin";
   document.body.classList.toggle("admin-mode", ok);
@@ -158,18 +182,20 @@ function requireAdmin() {
 }
 
 async function restoreAdminSession() {
-  const raw = sessionStorage.getItem("medical-ai-v6-admin-session");
+  const raw = readAdminSession();
   if (!raw) {
     requireAdmin();
     renderAdminManager();
+    renderLearningAdmin();
     return;
   }
   try {
     const session = JSON.parse(raw);
     if (session.role !== "admin" || !session.login_name || !session.password) {
-      sessionStorage.removeItem("medical-ai-v6-admin-session");
+      clearAdminSession();
       requireAdmin();
       renderAdminManager();
+      renderLearningAdmin();
       return;
     }
     state.profile = {
@@ -180,11 +206,12 @@ async function restoreAdminSession() {
     state.password = session.password;
     setStatus(`管理员已登录：${session.display_name || session.login_name}`);
     requireAdmin();
-    await Promise.all([loadDatabase(), loadActiveTable()]);
+    await Promise.all([loadDatabase(), loadActiveTable(), loadLearningResources()]);
   } catch {
-    sessionStorage.removeItem("medical-ai-v6-admin-session");
+    clearAdminSession();
     requireAdmin();
     renderAdminManager();
+    renderLearningAdmin();
   }
 }
 
@@ -210,15 +237,10 @@ async function login() {
   }
   state.profile = profile;
   state.password = password;
-  sessionStorage.setItem("medical-ai-v6-admin-session", JSON.stringify({
-    login_name: profile.login_name,
-    display_name: profile.display_name,
-    role: profile.role,
-    password
-  }));
+  saveAdminSession(profile, password);
   setStatus(`管理员已登录：${profile.display_name || profile.login_name}`);
   requireAdmin();
-  await Promise.all([loadDatabase(), loadActiveTable()]);
+  await Promise.all([loadDatabase(), loadActiveTable(), loadLearningResources()]);
 }
 
 function logout() {
@@ -226,10 +248,13 @@ function logout() {
   state.password = "";
   state.tableRows = [];
   state.selectedRecord = null;
-  sessionStorage.removeItem("medical-ai-v6-admin-session");
+  state.learningRows = [];
+  state.selectedLearning = null;
+  clearAdminSession();
   setStatus("请使用管理员账号登录后台");
   requireAdmin();
   renderAdminManager();
+  renderLearningAdmin();
 }
 
 async function createStaff() {
@@ -515,19 +540,181 @@ async function toggleActiveRecord() {
   await loadActiveTable();
 }
 
-async function saveResource() {
-  if (!requireAdmin()) return;
-  const { error } = await supabase.from("learning_resources").insert({
-    title: document.querySelector("#resourceTitle").value.trim(),
-    type: "link",
-    url: document.querySelector("#resourceUrl").value.trim(),
-    description: document.querySelector("#resourceDescription").value.trim()
-  });
-  if (error) alert(error.message);
-  else {
-    alert("学习资料已保存");
-    await reloadIfTable("learning_resources");
+async function loadLearningResources() {
+  if (!requireAdmin() || !supabase) {
+    renderLearningAdmin();
+    return;
   }
+  const { data, error } = await supabase
+    .from("learning_resources")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(1000);
+  if (error) {
+    state.learningRows = [];
+    state.selectedLearning = null;
+    renderLearningAdmin(error.message);
+    return;
+  }
+  state.learningRows = data || [];
+  if (state.selectedLearning?.id) {
+    state.selectedLearning = state.learningRows.find((row) => row.id === state.selectedLearning.id) || null;
+  }
+  renderLearningAdmin();
+}
+
+function getFilteredLearningRows() {
+  const keyword = document.querySelector("#learningSearch")?.value.trim().toLowerCase() || "";
+  if (!keyword) return state.learningRows;
+  return state.learningRows.filter((row) => JSON.stringify(row).toLowerCase().includes(keyword));
+}
+
+function renderLearningAdmin(errorText = "") {
+  const list = document.querySelector("#learningAdminList");
+  const editor = document.querySelector("#learningEditor");
+  if (!list || !editor) return;
+  if (!requireAdmin()) {
+    list.innerHTML = `<div class="admin-db-empty">登录管理员账号后显示学习资料。</div>`;
+    editor.innerHTML = `<div class="empty-editor">请先登录管理员账号。</div>`;
+    return;
+  }
+  if (errorText) {
+    list.innerHTML = `<div class="admin-db-empty">读取学习资料失败：${escapeHtml(errorText)}</div>`;
+    editor.innerHTML = `<div class="empty-editor">请检查 Supabase 权限或 learning_resources 表结构。</div>`;
+    return;
+  }
+  const rows = getFilteredLearningRows();
+  list.innerHTML = rows.length ? rows.map((row) => `
+    <div class="learning-book-row ${state.selectedLearning?.id === row.id ? "active" : ""}">
+      <button type="button" data-learning-id="${row.id}">
+        <strong>${escapeHtml(row.title || "未命名资料")}</strong>
+        <span>${escapeHtml(row.type || "text")}${row.is_active === false ? " · 已停用" : ""}</span>
+      </button>
+      <button class="ghost-button mini-edit-button" type="button" data-learning-edit="${row.id}">编辑</button>
+    </div>
+  `).join("") : `<div class="admin-db-empty">还没有学习资料。点击“新增书籍”，把文字粘贴到右侧正文后保存。</div>`;
+  list.querySelectorAll("[data-learning-id], [data-learning-edit]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const id = button.dataset.learningId || button.dataset.learningEdit;
+      state.selectedLearning = state.learningRows.find((row) => String(row.id) === id) || null;
+      renderLearningAdmin();
+    });
+  });
+  renderLearningEditor();
+}
+
+function renderLearningEditor() {
+  const editor = document.querySelector("#learningEditor");
+  const record = state.selectedLearning;
+  if (!editor) return;
+  if (!record) {
+    editor.innerHTML = `<div class="empty-editor">请选择左侧书籍，或点击“新增书籍”。</div>`;
+    return;
+  }
+  editor.innerHTML = `
+    <div class="editor-heading">
+      <strong>${record.id ? "编辑学习资料" : "新增学习资料"}</strong>
+      <span>保存后前台学习区立即读取数据库内容</span>
+    </div>
+    <label class="admin-edit-field">
+      <span>书籍 / 资料名称</span>
+      <input data-learning-field="title" type="text" required value="${escapeHtml(record.title || "")}" />
+    </label>
+    <div class="two-col">
+      <label class="admin-edit-field">
+        <span>资料类型</span>
+        <select data-learning-field="type">
+          ${["text", "link", "pdf", "video", "audio", "image", "office"].map((type) => `<option value="${type}" ${record.type === type ? "selected" : ""}>${type}</option>`).join("")}
+        </select>
+      </label>
+      <label class="admin-edit-field checkbox-field">
+        <input data-learning-field="is_active" type="checkbox" ${record.is_active !== false ? "checked" : ""} />
+        <span>前台显示</span>
+      </label>
+    </div>
+    <label class="admin-edit-field">
+      <span>外部链接 / 文件地址</span>
+      <input data-learning-field="url" type="text" value="${escapeHtml(record.url || "")}" />
+    </label>
+    <label class="admin-edit-field">
+      <span>资料说明</span>
+      <textarea data-learning-field="description" rows="3">${escapeHtml(record.description || "")}</textarea>
+    </label>
+    <label class="admin-edit-field learning-content-field">
+      <span>书籍正文 / 章节内容</span>
+      <textarea data-learning-field="content" rows="18" placeholder="可以直接把 TXT、Word/WPS 里的文字复制粘贴到这里。">${escapeHtml(record.content || "")}</textarea>
+    </label>
+    <div class="editor-actions">
+      <button class="primary-button" type="submit">保存学习资料</button>
+      ${record.id ? `<button class="ghost-button" id="toggleLearningActiveButton" type="button">${record.is_active === false ? "前台显示" : "前台隐藏"}</button>` : ""}
+    </div>
+  `;
+  editor.querySelector("#toggleLearningActiveButton")?.addEventListener("click", toggleLearningActive);
+}
+
+function createLearningResource() {
+  if (!requireAdmin()) return;
+  state.selectedLearning = {
+    title: "",
+    type: "text",
+    url: "",
+    description: "",
+    content: "",
+    is_active: true
+  };
+  renderLearningAdmin();
+}
+
+function collectLearningRecord() {
+  const record = { ...state.selectedLearning };
+  document.querySelectorAll("#learningEditor [data-learning-field]").forEach((input) => {
+    const field = input.dataset.learningField;
+    if (input.type === "checkbox") record[field] = input.checked;
+    else record[field] = input.value;
+  });
+  return record;
+}
+
+async function saveLearningResource(event) {
+  event.preventDefault();
+  if (!requireAdmin() || !state.selectedLearning) return;
+  const payload = collectLearningRecord();
+  if (!payload.title?.trim()) {
+    alert("请填写书籍或资料名称");
+    return;
+  }
+  let result;
+  if (payload.id) {
+    const id = payload.id;
+    delete payload.created_at;
+    result = await supabase.from("learning_resources").update(payload).eq("id", id).select().single();
+  } else {
+    delete payload.id;
+    delete payload.created_at;
+    result = await supabase.from("learning_resources").insert(payload).select().single();
+  }
+  if (result.error) {
+    alert(result.error.message);
+    return;
+  }
+  state.selectedLearning = result.data;
+  alert("学习资料已保存");
+  await Promise.all([loadLearningResources(), reloadIfTable("learning_resources")]);
+}
+
+async function toggleLearningActive() {
+  if (!requireAdmin() || !state.selectedLearning?.id) return;
+  const next = state.selectedLearning.is_active === false;
+  const { error } = await supabase
+    .from("learning_resources")
+    .update({ is_active: next })
+    .eq("id", state.selectedLearning.id);
+  if (error) {
+    alert(error.message);
+    return;
+  }
+  state.selectedLearning.is_active = next;
+  await Promise.all([loadLearningResources(), reloadIfTable("learning_resources")]);
 }
 
 async function saveTerm() {
@@ -571,19 +758,22 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;");
 }
 
-document.querySelector("#loginButton").addEventListener("click", login);
-document.querySelector("#logoutButton").addEventListener("click", logout);
-document.querySelector("#createInviteButton").addEventListener("click", createStaff);
-document.querySelector("#deleteStaffButton").addEventListener("click", deleteStaff);
-document.querySelector("#saveResourceButton").addEventListener("click", saveResource);
-document.querySelector("#saveTermButton").addEventListener("click", saveTerm);
-document.querySelector("#saveFormulaButton").addEventListener("click", saveFormula);
+document.querySelector("#loginButton")?.addEventListener("click", login);
+document.querySelector("#logoutButton")?.addEventListener("click", logout);
+document.querySelector("#createInviteButton")?.addEventListener("click", createStaff);
+document.querySelector("#deleteStaffButton")?.addEventListener("click", deleteStaff);
+document.querySelector("#saveTermButton")?.addEventListener("click", saveTerm);
+document.querySelector("#saveFormulaButton")?.addEventListener("click", saveFormula);
 document.querySelector("#refreshDataButton").addEventListener("click", async () => {
-  await Promise.all([loadDatabase(), loadActiveTable()]);
+  await Promise.all([loadDatabase(), loadActiveTable(), loadLearningResources()]);
 });
-document.querySelector("#newDbRecordButton").addEventListener("click", createBlankRecord);
-document.querySelector("#adminDbEditor").addEventListener("submit", saveActiveRecord);
-document.querySelector("#adminDbSearch").addEventListener("input", renderAdminManager);
+document.querySelector("#newDbRecordButton")?.addEventListener("click", createBlankRecord);
+document.querySelector("#adminDbEditor")?.addEventListener("submit", saveActiveRecord);
+document.querySelector("#adminDbSearch")?.addEventListener("input", renderAdminManager);
+document.querySelector("#reloadLearningButton")?.addEventListener("click", loadLearningResources);
+document.querySelector("#newLearningButton")?.addEventListener("click", createLearningResource);
+document.querySelector("#learningEditor")?.addEventListener("submit", saveLearningResource);
+document.querySelector("#learningSearch")?.addEventListener("input", renderLearningAdmin);
 document.querySelectorAll("#adminDbTabs [data-table]").forEach((button) => {
   button.addEventListener("click", async () => {
     state.activeTable = button.dataset.table;

@@ -1382,12 +1382,14 @@ async function signIn() {
     };
     state.role = profile.role;
     if (profile.role === "admin") {
-      sessionStorage.setItem("medical-ai-v6-admin-session", JSON.stringify({
+      const adminSession = JSON.stringify({
         login_name: profile.login_name,
         display_name: profile.display_name,
         role: profile.role,
         password
-      }));
+      });
+      sessionStorage.setItem("medical-ai-v6-admin-session", adminSession);
+      localStorage.setItem("medical-ai-v6-admin-session", adminSession);
     }
     addAudit(`账号登录：${profile.login_name}`);
     renderRole();
@@ -1421,6 +1423,7 @@ async function signOut() {
   state.profile = null;
   state.currentPassword = "";
   sessionStorage.removeItem("medical-ai-v6-admin-session");
+  localStorage.removeItem("medical-ai-v6-admin-session");
   addAudit("账号退出");
   renderRole();
   renderDatabase();

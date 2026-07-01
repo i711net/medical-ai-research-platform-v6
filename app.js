@@ -1024,8 +1024,11 @@ async function requestLocalOllamaDiagnosis({ selectedLabels, tongueText, pulseTe
         model: modelName,
         stream: false,
         options: {
-          temperature: 0.2,
-          num_predict: 384,
+          temperature: 0.1,
+          top_p: 0.85,
+          repeat_penalty: 1.25,
+          repeat_last_n: 128,
+          num_predict: 256,
           num_ctx: 2048
         },
         messages: [
@@ -1048,6 +1051,15 @@ async function requestLocalOllamaDiagnosis({ selectedLabels, tongueText, pulseTe
     if (!chatResponse.ok) throw new Error(data.error || `Ollama chat HTTP ${chatResponse.status}`);
 
     const content = data.message?.content || data.response || "";
+    const quality = validateLocalAiOutput(content, selectedLabels);
+    if (!quality.ok) {
+      return {
+        handled: true,
+        message: state.lang === "zh"
+          ? `本机 Ollama 模型返回质量不合格，已自动拦截。\n\n原因：${quality.reason}\n\n请以左侧“博士级 AI 推理引擎”的规则 + GraphRAG 结果为准；本地模型可换用 qwen2.5:7b-instruct、qwen3:8b 或其他指令模型后再试。`
+          : `Local Ollama output was blocked by quality checks.\n\nReason: ${quality.reason}\n\nUse the local rule + GraphRAG result on the left, or switch to a stronger instruction model.`
+      };
+    }
     return {
       handled: true,
       message: state.lang === "zh"
@@ -1067,12 +1079,21 @@ async function requestLocalOllamaDiagnosis({ selectedLabels, tongueText, pulseTe
 }
 
 function buildMedicalPrompt(selectedLabels, tongueText, pulseText, freeText) {
+  const hasRedFlag = selectedLabels.some((label) => /胸痛|黑便|咯血|吐血|尿血|出血|昏迷|抽搐|呼吸困难|偏瘫|剧烈头痛|高热/.test(label))
+    || /胸痛|黑便|咯血|吐血|尿血|出血|昏迷|抽搐|呼吸困难|偏瘫|剧烈头痛|高热/.test(freeText || "");
   return `请根据以下资料做中医+西医教学推理：
 症状：${selectedLabels.join("、") || "未选择"}
 舌象：${tongueText}
 脉象：${pulseText}
 自由描述：${freeText || "无"}
 
+硬性要求：
+- 不要编造不存在的方剂组成。
+- 不要重复同一个药物或同一句话。
+- 方剂最多推荐 2 个，并说明“适用条件/禁忌”，不得输出长药物清单。
+- 如果有黑便、吐血、咯血、胸痛、呼吸困难、偏瘫、昏迷、抽搐、持续高热等危险信号，必须优先建议线下急诊/专科评估，不得给具体处方。
+- 输出总字数控制在 500 字以内。
+${hasRedFlag ? "- 当前资料含危险信号：请不要推荐具体处方，只能给安全分流、鉴别方向和补问要点。\n" : ""}
 请按结构输出：
 1. 安全风险分级：低/中/高，列出需立即就医的危险信号
 2. 中医辨证：可能证型、证据、病机，不要和已选症状矛盾
@@ -1081,6 +1102,30 @@ function buildMedicalPrompt(selectedLabels, tongueText, pulseText, freeText) {
 5. 加减思路：根据症状说明加减方向
 6. 预防调护：生活方式、复诊和检查建议
 7. 不确定性：还需要补问什么`;
+}
+
+function validateLocalAiOutput(content, selectedLabels = []) {
+  const text = String(content || "").trim();
+  if (!text) return { ok: false, reason: "模型没有返回内容" };
+  if (text.length > 1800) return { ok: false, reason: "输出过长，可能已经跑偏" };
+
+  const repeatedHerb = text.match(/([\u4e00-\u9fa5]{1,4})(、\1){3,}/);
+  if (repeatedHerb) return { ok: false, reason: `出现明显重复内容：${repeatedHerb[0].slice(0, 30)}` };
+
+  const chunks = text.match(/[\u4e00-\u9fa5]{2,6}/g) || [];
+  const counts = chunks.reduce((acc, item) => {
+    acc[item] = (acc[item] || 0) + 1;
+    return acc;
+  }, {});
+  const repeated = Object.entries(counts).find(([word, count]) => count >= 10 && !["危险信号", "线下就医", "医学评估"].includes(word));
+  if (repeated) return { ok: false, reason: `词语反复出现：${repeated[0]}` };
+
+  const hasRedFlag = selectedLabels.some((label) => /胸痛|黑便|咯血|吐血|尿血|出血|昏迷|抽搐|呼吸困难|偏瘫|剧烈头痛|高热/.test(label));
+  const suggestsFormula = /方剂包括|处方|剂量|每日|水煎|克|五味子汤|麻黄汤|桂枝汤|银翘散/.test(text);
+  if (hasRedFlag && suggestsFormula && !/急诊|立即就医|线下|专科|排除/.test(text)) {
+    return { ok: false, reason: "存在危险信号时仍给出具体方剂，安全性不足" };
+  }
+  return { ok: true, reason: "" };
 }
 
 function buildLocalAiGuide(reason) {

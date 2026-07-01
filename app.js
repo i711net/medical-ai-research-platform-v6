@@ -1148,9 +1148,22 @@ function validateLocalAiOutput(content, selectedLabels = []) {
   return { ok: true, reason: "" };
 }
 
+function getOllamaAllowedOriginsText() {
+  const origins = new Set([
+    window.location.origin,
+    "https://www.365465.xyz",
+    "https://365465.xyz",
+    "https://medical-ai-research-platform-v6.vercel.app",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000"
+  ]);
+  return [...origins].filter(Boolean).join(",");
+}
+
 function buildLocalAiGuide(reason) {
+  const origins = getOllamaAllowedOriginsText();
   if (state.lang !== "zh") {
-    return `${reason}\n\nLocal AI setup:\n1. Install Ollama on this computer.\n2. Run: ollama pull qwen2.5:7b-instruct\n3. If CORS blocks this site, allow this domain in OLLAMA_ORIGINS and restart Ollama.\n\nThe local rule + GraphRAG result remains available above.`;
+    return `${reason}\n\nLocal AI setup:\n1. Install Ollama on this computer.\n2. Run: ollama pull qwen2.5:7b-instruct\n3. If CORS blocks this site, set OLLAMA_ORIGINS to:\n${origins}\n4. Fully quit and restart Ollama.\n\nPhone note: a phone cannot use the desktop's localhost model directly. Use a server-side AI API or a secured remote Ollama proxy.\n\nThe local rule + GraphRAG result remains available above.`;
   }
   return `${reason}
 
@@ -1158,7 +1171,11 @@ function buildLocalAiGuide(reason) {
 1. 在使用者电脑安装 Ollama。
 2. 先拉一个模型，例如：ollama pull qwen2.5:7b-instruct
 3. 如果要使用你下载的 GGUF，可用 Ollama 创建本地模型，例如 Modelfile 写 FROM 你的 .gguf 文件路径。
-4. 如果浏览器提示跨域拦截，需要给 Ollama 设置 OLLAMA_ORIGINS，允许本网站域名。
+4. 如果浏览器提示跨域拦截，需要给 Ollama 设置 OLLAMA_ORIGINS，允许这些网站来源：
+${origins}
+5. 完全退出 Ollama 后重新启动，再回网页点“重新检测”。
+
+手机说明：手机没有电脑里的 localhost 模型，不能直接使用电脑本机 Ollama。手机要使用 AI，需要改成云端模型接口，或使用带安全认证的远程 Ollama 服务。
 
 上方本地规则 + GraphRAG 结果仍然可用。`;
 }
@@ -1199,7 +1216,7 @@ async function detectLocalAi() {
     panel.classList.add("error");
     title.textContent = state.lang === "zh" ? "本地 AI 模型：未连接" : "Local AI model: not connected";
     status.textContent = state.lang === "zh"
-      ? "Ollama 可能已启动，但浏览器访问被拦截。请允许本网站访问本机 Ollama，或重启 Ollama 后再点“重新检测”。"
+      ? `Ollama 可能已启动，但浏览器访问被拦截。请把 OLLAMA_ORIGINS 设置为：${getOllamaAllowedOriginsText()}，然后完全退出并重启 Ollama。`
       : "Ollama may be running, but browser access is blocked. Allow this site to access local Ollama, then check again.";
   }
 }
@@ -1278,7 +1295,7 @@ async function testLocalAiModel() {
   } catch (error) {
     panel.classList.add("error");
     title.textContent = "本地 AI 模型：测试失败";
-    status.textContent = `没有完成本机模型测试：${error.message || error}。如果 Ollama 已启动，请设置 OLLAMA_ORIGINS 允许本网站，然后完全退出并重启 Ollama。`;
+    status.textContent = `没有完成本机模型测试：${error.message || error}。如果 Ollama 已启动，请设置 OLLAMA_ORIGINS=${getOllamaAllowedOriginsText()}，然后完全退出并重启 Ollama。`;
   }
 }
 
@@ -1291,7 +1308,7 @@ function showLocalAiHelp() {
   panel.classList.remove("ready", "warning", "error");
   panel.classList.add("warning");
   title.textContent = "本地 AI 模型：连接说明";
-  status.textContent = "连接顺序：1. 先打开电脑里的 Ollama 程序；2. 在 Ollama 里添加模型；3. 如果网页测试 Failed to fetch，请设置 OLLAMA_ORIGINS=https://medical-ai-research-platform-v6.vercel.app 后完全退出并重启 Ollama；4. 回本网页点“重新检测”和“测试本地模型”。";
+  status.textContent = `连接顺序：1. 先打开电脑里的 Ollama 程序；2. 在 Ollama 里添加模型；3. 如果网页测试 Failed to fetch，请设置 OLLAMA_ORIGINS=${getOllamaAllowedOriginsText()}；4. 完全退出并重启 Ollama；5. 回本网页点“重新检测”和“测试本地模型”。手机端不能直接调用电脑 localhost 模型，需使用云端 AI 接口或安全远程代理。`;
 }
 
 async function initSupabase() {

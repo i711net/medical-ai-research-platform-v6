@@ -645,7 +645,10 @@ function renderLearningEditor() {
       <div class="learning-import-tools">
         <input id="learningTextFileInput" type="file" accept=".txt,.csv,.md,.log,.list,text/plain,text/markdown,text/csv" />
         <button class="ghost-button" id="appendLearningTextButton" type="button">追加到正文</button>
+        <input id="wikisourceTitleInput" type="text" placeholder="维基文库标题，如：傷寒論" />
+        <button class="ghost-button" id="importWikisourceButton" type="button">导入维基文库全文</button>
         <small>TXT 或目录清单建议直接导入文件，系统会优先按 UTF-8 读取，失败后按 GB18030/GBK 读取。</small>
+        <small>维基文库只适合导入公版古籍或开放授权文本；导入后请保留来源链接和授权说明。</small>
       </div>
       <textarea data-learning-field="content" rows="18" placeholder="可以直接把 TXT、Word/WPS 里的文字复制粘贴到这里。">${escapeHtml(record.content || "")}</textarea>
       <small class="encoding-hint">如果正文出现很多“����”，说明复制前已经乱码，请从原始 TXT 文件导入，或把原文件另存为 UTF-8 后再复制。</small>
@@ -658,6 +661,7 @@ function renderLearningEditor() {
   editor.querySelector("#toggleLearningActiveButton")?.addEventListener("click", toggleLearningActive);
   editor.querySelector("#learningTextFileInput")?.addEventListener("change", importLearningTextFile);
   editor.querySelector("#appendLearningTextButton")?.addEventListener("click", appendImportedLearningText);
+  editor.querySelector("#importWikisourceButton")?.addEventListener("click", importWikisourceText);
 }
 
 async function readTextFileWithEncoding(file) {
@@ -693,6 +697,59 @@ async function appendImportedLearningText() {
   }
   const text = await readTextFileWithEncoding(file);
   contentInput.value = `${contentInput.value.trim()}\n\n${text}`.trim();
+}
+
+async function importWikisourceText() {
+  const titleInput = document.querySelector("#wikisourceTitleInput");
+  const bookTitleInput = document.querySelector("#learningEditor [data-learning-field='title']");
+  const typeInput = document.querySelector("#learningEditor [data-learning-field='type']");
+  const urlInput = document.querySelector("#learningEditor [data-learning-field='url']");
+  const descriptionInput = document.querySelector("#learningEditor [data-learning-field='description']");
+  const contentInput = document.querySelector("#learningEditor [data-learning-field='content']");
+  const title = titleInput?.value.trim() || bookTitleInput?.value.trim();
+  if (!title || !contentInput) {
+    alert("请先输入维基文库页面标题，例如：傷寒論、金匱要略、神農本草經");
+    return;
+  }
+  const apiUrl = new URL("https://zh.wikisource.org/w/api.php");
+  apiUrl.searchParams.set("action", "query");
+  apiUrl.searchParams.set("prop", "extracts|info");
+  apiUrl.searchParams.set("explaintext", "1");
+  apiUrl.searchParams.set("inprop", "url");
+  apiUrl.searchParams.set("redirects", "1");
+  apiUrl.searchParams.set("format", "json");
+  apiUrl.searchParams.set("origin", "*");
+  apiUrl.searchParams.set("titles", title);
+  try {
+    const response = await fetch(apiUrl.toString());
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    const page = Object.values(data.query?.pages || {})[0];
+    if (!page || page.missing !== undefined || !page.extract) {
+      alert("没有找到可导入的维基文库正文。请确认标题使用繁体原题，例如：傷寒論。");
+      return;
+    }
+    const pageTitle = page.title || title;
+    const pageUrl = page.fullurl || `https://zh.wikisource.org/wiki/${encodeURIComponent(pageTitle)}`;
+    const cleanText = page.extract.replace(/\n{3,}/g, "\n\n").trim();
+    bookTitleInput.value = pageTitle;
+    if (typeInput) typeInput.value = "text";
+    if (urlInput) urlInput.value = pageUrl;
+    if (descriptionInput) {
+      descriptionInput.value = `维基文库开放古籍文本。来源：${pageUrl}。请保留来源与授权说明。`;
+    }
+    contentInput.value = [
+      `书名：${pageTitle}`,
+      "来源：维基文库",
+      `来源链接：${pageUrl}`,
+      "授权提醒：维基文库文本通常按自由授权或公有领域规则提供；请保留来源链接与授权说明。本资料仅供学习研究，不构成医疗建议。",
+      "",
+      cleanText
+    ].join("\n");
+    alert("已导入正文，请检查内容后点击“保存学习资料”。");
+  } catch (error) {
+    alert(`导入失败：${error.message}。可打开维基文库页面，复制文字或下载 EPUB/PDF 后再导入。`);
+  }
 }
 
 function createLearningResource() {

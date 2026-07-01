@@ -96,7 +96,10 @@ const copy = {
     inviteRole: "人员角色",
     inviteCodeOut: "生成注册码",
     createInvite: "保存人员账号",
-    deletePassword: "删除专用密码"
+    deletePassword: "删除专用密码",
+    learningTitle: "中医西医学习区",
+    learningSub: "医学图书、视频、音频、链接资料目录。",
+    openLearning: "打开学习区"
   },
   en: {
     tagline: "TCM + Western medicine + GraphRAG + tongue vision + bilingual paper demo",
@@ -174,7 +177,10 @@ const copy = {
     inviteRole: "Staff role",
     inviteCodeOut: "Generated code",
     createInvite: "Save staff account",
-    deletePassword: "Deletion password"
+    deletePassword: "Deletion password",
+    learningTitle: "TCM and Western Medicine Learning Area",
+    learningSub: "Library catalog for medical books, videos, audio, and links.",
+    openLearning: "Open learning area"
   }
 };
 

@@ -440,6 +440,12 @@ textarea {
   gap: 10px;
 }
 
+.diagnosis-select-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
 select,
 input,
 textarea {
@@ -1363,6 +1369,7 @@ textarea:disabled {
   .top-actions,
   .top-login,
   .two-col,
+  .diagnosis-select-grid,
   .chip-grid,
   .learning-layout,
   .admin-dashboard {

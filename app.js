@@ -28,6 +28,8 @@ const copy = {
     researchOnly: "Research and education only",
     symptoms: "症状",
     tongue: "舌象",
+    tongueBody: "舌质",
+    tongueCoating: "舌苔",
     pulse: "脉象",
     uploadTongue: "上传舌象图片",
     uploadHint: "本地预览为模拟分析；接入 HF_TOKEN 后可调用 HuggingFace Vision。",
@@ -104,6 +106,8 @@ const copy = {
     researchOnly: "Research and education only",
     symptoms: "Symptoms",
     tongue: "Tongue sign",
+    tongueBody: "Tongue body",
+    tongueCoating: "Tongue coating",
     pulse: "Pulse",
     uploadTongue: "Upload tongue image",
     uploadHint: "Local preview uses simulated analysis; HF_TOKEN can enable HuggingFace Vision.",
@@ -744,16 +748,32 @@ function renderSymptoms() {
   });
 }
 
+function getSelectLabel(selector, fallback = "未选择") {
+  return document.querySelector(selector)?.selectedOptions?.[0]?.textContent?.split("/")?.[0]?.trim() || fallback;
+}
+
+function getTongueText() {
+  const body = getSelectLabel("#tongueBodySelect");
+  const coating = getSelectLabel("#tongueCoatingSelect");
+  const parts = [];
+  if (body !== "未选择") parts.push(`舌质：${body}`);
+  if (coating !== "未选择") parts.push(`舌苔：${coating}`);
+  return parts.join("；") || "未选择";
+}
+
 function analyze() {
   const selected = state.selectedSymptoms;
-  const tongue = document.querySelector("#tongueSelect").value;
+  const tongueBody = document.querySelector("#tongueBodySelect")?.value || "none";
+  const tongueCoating = document.querySelector("#tongueCoatingSelect")?.value || "none";
+  const tongueSigns = new Set([tongueBody, tongueCoating].filter((value) => value && value !== "none"));
+  const hasTongue = (...values) => values.some((value) => tongueSigns.has(value));
   const pulse = document.querySelector("#pulseSelect").value;
   const freeText = document.querySelector("#freeText").value || "";
   const mentions = (terms) => terms.some((term) => freeText.toLowerCase().includes(term.toLowerCase()));
   const hasAny = (...ids) => ids.some((id) => selected.has(id));
   const selectedItems = symptomOptions.filter((item) => selected.has(item.id));
   const selectedLabels = selectedItems.map((item) => item.zh);
-  const tongueText = document.querySelector("#tongueSelect").selectedOptions[0]?.textContent?.split("/")[0]?.trim() || "未选择";
+  const tongueText = getTongueText();
   const pulseText = document.querySelector("#pulseSelect").selectedOptions[0]?.textContent?.split("/")[0]?.trim() || "未选择";
   const evidence = [];
   const addEvidence = (text) => {
@@ -781,10 +801,10 @@ function analyze() {
     scores[profile] += amount;
   };
 
-  if (!selected.size && tongue === "none" && pulse === "none" && !freeText.trim()) add("undifferentiated", 5);
+  if (!selected.size && tongueSigns.size === 0 && pulse === "none" && !freeText.trim()) add("undifferentiated", 5);
 
   if (hasAny("headache", "temporalHeadache", "vertexHeadache", "dizziness", "redEyes", "ribPain")) { add("liver", 2); addEvidence("头目胁肋症状提示肝胆经或清窍受扰"); }
-  if (hasAny("bitter", "redEyes") || tongue === "red" || tongue === "darkRed") { add("liver", 1); add("stomachHeat", 1); addEvidence("红舌、目赤、口苦偏热象"); }
+  if (hasAny("bitter", "redEyes") || hasTongue("red", "darkRed")) { add("liver", 1); add("stomachHeat", 1); addEvidence("红舌、目赤、口苦偏热象"); }
   if (pulse === "wiry") { add("liverQi", 2); add("liver", 1); addEvidence("弦脉多见肝胆、气滞、疼痛或痰饮"); }
   if (hasAny("chestPain", "chestTightness", "fixedPain", "darkMenses", "clottedMenses") || mentions(["胸痛", "胸闷", "刺痛", "血块", "chest pain"])) { add("bloodStasis", 3); add("liverQi", 1); addEvidence("刺痛固定、胸痛或血块提示血瘀/气滞风险"); }
 
@@ -792,42 +812,42 @@ function analyze() {
   if (hasAny("phlegm", "whitePhlegm", "yellowPhlegm", "wheezing", "noSweat") || pulse === "floating" || mentions(["发热", "咳嗽", "后头痛", "恶寒", "鼻塞", "fever", "cough"])) { add("exterior", 1); }
 
   if (hasAny("fatigue", "poorAppetite", "looseStool", "undigestedFoodStool", "edema", "sallowComplexion", "shortBreath")) { add("qi", 2); addEvidence("乏力、纳差、便溏、气短提示脾肺气虚"); }
-  if (hasAny("warmDrinkPreference", "clearLongUrine", "nightUrination", "coldLimbs") || tongue === "pale" || tongue === "teethMarked" || tongue === "swollen" || pulse === "deep" || pulse === "deficient" || mentions(["乏力", "纳差", "便溏", "怕冷", "fatigue"])) { add("qi", 1); }
+  if (hasAny("warmDrinkPreference", "clearLongUrine", "nightUrination", "coldLimbs") || hasTongue("pale", "teethMarked", "swollen") || pulse === "deep" || pulse === "deficient" || mentions(["乏力", "纳差", "便溏", "怕冷", "fatigue"])) { add("qi", 1); }
 
   if (hasAny("insomnia", "dreaminess", "palpitation", "forgetfulness", "anxiety")) { add("heartSpleen", 2); addEvidence("失眠多梦、心悸健忘提示心神失养"); }
   if (hasAny("poorAppetite", "looseStool", "fatigue", "paleComplexion", "scantyMenses", "paleMenses")) add("heartSpleen", 1);
-  if (tongue === "tender" || tongue === "pale" || pulse === "weak" || pulse === "deficient" || pulse === "thin") { add("heartSpleen", 2); addEvidence("舌嫩/舌淡、弱脉/虚脉/细脉偏虚证"); }
+  if (hasTongue("tender", "pale") || pulse === "weak" || pulse === "deficient" || pulse === "thin") { add("heartSpleen", 2); addEvidence("舌嫩/舌淡、弱脉/虚脉/细脉偏虚证"); }
   if (mentions(["失眠", "多梦", "心悸", "健忘", "insomnia", "dream"])) add("heartSpleen", 2);
 
-  if (hasAny("nightSweat", "fiveCenterHeat", "tidalFever", "dryThroat", "hotPalmsSoles") || tongue === "scanty" || tongue === "peeled" || pulse === "thin" || pulse === "rapid") { add("yin", 2); addEvidence("盗汗、潮热、少苔、细数脉偏阴虚内热"); }
-  if ((hasAny("insomnia", "dreaminess")) && (tongue === "scanty" || pulse === "thin" || hasAny("nightSweat", "fiveCenterHeat"))) add("yin", 2);
+  if (hasAny("nightSweat", "fiveCenterHeat", "tidalFever", "dryThroat", "hotPalmsSoles") || hasTongue("scanty", "peeled") || pulse === "thin" || pulse === "rapid") { add("yin", 2); addEvidence("盗汗、潮热、少苔、细数脉偏阴虚内热"); }
+  if ((hasAny("insomnia", "dreaminess")) && (hasTongue("scanty") || pulse === "thin" || hasAny("nightSweat", "fiveCenterHeat"))) add("yin", 2);
 
-  if (hasAny("dryMouth", "dryThroat", "thirst", "noDesireToDrink", "coldDrinkPreference", "cracked", "dryEyes") || tongue === "dry" || tongue === "cracked" || tongue === "scanty" || tongue === "peeled") { add("fluidDeficiency", 3); addEvidence("口干咽干、口渴、裂纹/燥苔提示津液不足或热伤津"); }
+  if (hasAny("dryMouth", "dryThroat", "thirst", "noDesireToDrink", "coldDrinkPreference", "cracked", "dryEyes") || hasTongue("dry", "cracked", "scanty", "peeled")) { add("fluidDeficiency", 3); addEvidence("口干咽干、口渴、裂纹/燥苔提示津液不足或热伤津"); }
   if (hasAny("dryStool", "constipation", "hotPalmsSoles", "tidalFever") || pulse === "thin" || pulse === "rapid") add("fluidDeficiency", 1);
 
   if (hasAny("ribPain", "sighing", "distendingPain", "premenstrualBreastDistension", "irregularMenses", "anxiety", "foreignBodyThroat")) { add("liverQi", 2); addEvidence("胁胀、善太息、情志相关症状提示肝郁气滞"); }
   if (hasAny("poorAppetite", "abdominalDistension", "acidRegurgitation") || mentions(["胁痛", "太息", "郁闷", "乳胀", "情志"])) add("liverQi", 1);
 
   if (hasAny("yellowPhlegm", "shortYellowUrine", "urgentUrination", "painfulUrination", "stickyStool", "tenesmus", "yellowLeukorrhea", "scrotalDampness", "skinItching", "eczemaLike", "jaundice")) { add("dampHeat", 3); addEvidence("尿黄尿痛、黄带、黏滞便、皮肤湿痒提示湿热"); }
-  if (hasAny("bitter", "mouthOdor", "stickyMouth", "fever") || tongue === "greasy" || tongue === "yellow" || tongue === "thickGreasy" || pulse === "rapid" || mentions(["湿热", "尿痛", "黄带", "口黏", "黄疸"])) add("dampHeat", 1);
+  if (hasAny("bitter", "mouthOdor", "stickyMouth", "fever") || hasTongue("greasy", "yellow", "thickGreasy") || pulse === "rapid" || mentions(["湿热", "尿痛", "黄带", "口黏", "黄疸"])) add("dampHeat", 1);
 
   if (hasAny("phlegm", "whitePhlegm", "heavyHead", "chestTightness", "nausea", "abdominalDistension", "somnolence", "stickyMouth")) { add("phlegmDamp", 2); addEvidence("痰多、头重、胸闷、恶心、口黏提示痰湿阻滞"); }
-  if (hasAny("poorAppetite", "looseStool", "edema") || tongue === "greasy" || tongue === "thickGreasy" || tongue === "swollen" || pulse === "slippery" || mentions(["痰多", "头重", "困重", "苔腻"])) add("phlegmDamp", 1);
+  if (hasAny("poorAppetite", "looseStool", "edema") || hasTongue("greasy", "thickGreasy", "swollen") || pulse === "slippery" || mentions(["痰多", "头重", "困重", "苔腻"])) add("phlegmDamp", 1);
 
   if (hasAny("fixedPain", "chestPain", "darkComplexion", "scalyDrySkin", "bruising", "darkMenses", "clottedMenses", "pressureWorseDysmenorrhea")) { add("bloodStasis", 3); addEvidence("刺痛固定、经血块、面色晦暗、紫斑提示血瘀"); }
-  if (tongue === "purple" || tongue === "bluishPurple" || tongue === "darkRed" || pulse === "choppy" || mentions(["刺痛", "痛有定处", "瘀斑", "舌暗"])) add("bloodStasis", 2);
+  if (hasTongue("purple", "bluishPurple", "darkRed") || pulse === "choppy" || mentions(["刺痛", "痛有定处", "瘀斑", "舌暗"])) add("bloodStasis", 2);
 
   if (hasAny("mouthOdor", "rapidHunger", "coldDrinkPreference", "dryStool", "constipation", "gumBleed", "soreSwelling", "burningPain")) { add("stomachHeat", 2); addEvidence("口臭、消谷善饥、便秘、牙龈出血提示胃肠实热"); }
-  if (hasAny("thirst", "bitter", "sourTaste") || tongue === "red" || tongue === "yellow" || pulse === "rapid" || mentions(["胃热", "口臭", "牙龈", "便秘"])) add("stomachHeat", 1);
+  if (hasAny("thirst", "bitter", "sourTaste") || hasTongue("red", "yellow") || pulse === "rapid" || mentions(["胃热", "口臭", "牙龈", "便秘"])) add("stomachHeat", 1);
 
   if (hasAny("coldLimbs", "clearLongUrine", "nightUrination", "lowBackPain", "kneeWeakness", "impotence", "prematureEjaculation", "enuresis", "warmDrinkPreference")) { add("kidneyYang", 2); addEvidence("畏寒肢冷、夜尿、小便清长、腰膝酸软提示肾阳不足"); }
-  if (tongue === "pale" || tongue === "swollen" || pulse === "deep" || pulse === "weak" || mentions(["畏寒", "腰膝酸软", "夜尿", "阳痿"])) add("kidneyYang", 1);
+  if (hasTongue("pale", "swollen") || pulse === "deep" || pulse === "weak" || mentions(["畏寒", "腰膝酸软", "夜尿", "阳痿"])) add("kidneyYang", 1);
 
   if (hasAny("foodStagnation", "childAnorexia", "childDiarrhea", "childNightCrying") || mentions(["食积", "嗳腐", "小儿厌食", "腹胀"])) { add("childFood", 3); addEvidence("小儿厌食、食积、腹胀便臭提示食积停滞"); }
   if (hasAny("abdominalDistension", "poorAppetite", "undigestedFoodStool", "stickyStool")) add("childFood", 1);
 
   if (hasAny("noseBleed", "gumBleed", "bloodStool", "hematuria", "hemoptysis", "hematemesis", "melena", "skinBleeding", "easyBruising", "prolongedBleeding", "heavyMenses")) { add("bleeding", 4); addEvidence("出血类症状需优先辨危险信号和现代医学查因"); }
-  if (hasAny("fever", "redComplexion", "rash", "bruising") || tongue === "red" || pulse === "rapid" || mentions(["出血", "咯血", "吐血", "黑便", "尿血"])) add("bleeding", 1);
+  if (hasAny("fever", "redComplexion", "rash", "bruising") || hasTongue("red") || pulse === "rapid" || mentions(["出血", "咯血", "吐血", "黑便", "尿血"])) add("bleeding", 1);
 
   const ranked = Object.entries(scores).sort((a, b) => b[1] - a[1]);
   let profile = ranked[0][0];
@@ -932,7 +952,7 @@ async function requestHuggingFaceDiagnosis() {
   const selectedLabels = symptomOptions
     .filter((item) => state.selectedSymptoms.has(item.id))
     .map((item) => item.zh);
-  const tongueText = document.querySelector("#tongueSelect").selectedOptions[0]?.textContent?.split("/")[0]?.trim() || "未选择";
+  const tongueText = getTongueText();
   const pulseText = document.querySelector("#pulseSelect").selectedOptions[0]?.textContent?.split("/")[0]?.trim() || "未选择";
   const freeText = document.querySelector("#freeText").value || "";
 
@@ -1726,7 +1746,7 @@ async function saveCurrentRecord() {
     visitId: latestVisit?.id || "manual-demo",
     patientName: latestVisit?.name || "未绑定患者",
     symptoms: [...state.selectedSymptoms],
-    tongue: document.querySelector("#tongueSelect").value,
+    tongue: getTongueText(),
     pulse: document.querySelector("#pulseSelect").value,
     tcmDiagnosis: document.querySelector("#tcmDiagnosis").textContent,
     westernDiagnosis: document.querySelector("#westernDiagnosis").textContent,
